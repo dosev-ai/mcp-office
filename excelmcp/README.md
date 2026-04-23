@@ -269,7 +269,7 @@ All require `EXCEL_ENABLE_COM=true`. Auto-save on success. `confirm=True` requir
 | Tool | Description |
 |---|---|
 | `review_workbook_render` | Run structural quality checks (print area, empty sheets, stale formulas) before PDF export. Returns `passed`, `findings[]`, `checks_run` |
-| `produce_export_evidence_bundle` | Aggregate `export_as_pdf` results + render review findings into a versioned JSON evidence bundle for AW attachment |
+| `produce_export_evidence_bundle` | Aggregate `export_as_pdf` results + render review findings into a versioned JSON evidence bundle for issue tracker attachment |
 | `export_changed_sheets_only` | Hash sheet content; re-export only changed sheets to a timestamped directory; returns `exported_sheets[]`, `new_hashes{}` |
 
 ### ACP (Artifact Context Packet) Tool (1)
@@ -683,13 +683,13 @@ All implementation modules (`_core.py`, `_ooxml.py`, `_com.py`, `_advanced.py`, 
 
 ### Refactor Sprint (2026-03-11)
 
-**Monolith decomposition — no tools added or removed; 1069 tests passing; 4 AW tech-debt actions closed**
+**Monolith decomposition — no tools added or removed; 1069 tests passing; 4 project tracker tech-debt items closed**
 
 - Decomposed monolithic `server.py` (was 1048L → ~120L) into 4 `server_prompts_*.py` modules (`server_prompts_analysis.py`, `server_prompts_format.py`, `server_prompts_workflow.py`, `server_prompts_mgmt.py`)
 - Decomposed `server_com.py` (was 859L → ~31L re-export router) into `server_com_export.py` (~409L) + `server_com_pivot.py` (~425L)
 - Decomposed `_format.py` (was 898L → ~8L re-export router) into `_format_cell.py` (~251L) + `_format_dimensions.py` (~304L) + `_format_bulk.py` (~402L)
 - Decomposed `_data.py` (was 868L → ~9L re-export router) into `_data_cell.py` (~127L) + `_data_tables.py` (~214L) + `_data_annotations.py` (~392L) + `_data_write.py` (~188L)
-- All 4 AW tech-debt actions closed
+- All 4 project tracker tech-debt items closed
 - Total tool count: **55** (unchanged)
 
 ### Phase 2 — CSV Export + COM Hardening (2026-03-11)
@@ -933,7 +933,7 @@ All bulk replacements handle single-item inputs — no calling-pattern change ne
   anchor format to `"col,row"`
 - Showcase file built end-to-end exercising all 33 tools
   (`C:\Temp\excelmcp_showcase.xlsx` — UserStories, SalesData, Products sheets)
-- Action Worker bug entries created under Excel MCP epic
+- Issue-tracker bug entries created under Excel MCP epic
    (internal tracking references redacted in this public repository)
 
 ### v0.1.5 — 2026-02-23

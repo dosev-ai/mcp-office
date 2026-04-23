@@ -150,11 +150,11 @@ Returns `overall_passed`, `total_exports`, `total_review_findings`,
 
 ## STEP 6 — Iterate or Complete
 - If `overall_passed=True`: the render loop is complete. Attach the bundle to
-  the Action Worker record for this task as evidence.
+    the issue tracker record for this task as evidence.
 - If `overall_passed=False`: return to Step 3, fix remaining findings, and
   repeat the loop (Steps 3 → 4 → 5).
 
-Evidence bundle format for Action Worker attachment:
+Evidence bundle format for review record attachment:
 ```json
 {
   "bundle_version": "1.0",
