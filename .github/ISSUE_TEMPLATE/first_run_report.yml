@@ -1,0 +1,77 @@
+name: First Run Report
+description: Share your first-run experience — what worked, what didn't
+labels: ["first-run-friction"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        First-run reports help us improve the install and activation experience. Thank you!
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package you tried
+      options:
+        - excelmcp
+        - mailmcp
+        - pptmcp
+        - wordmcp
+    validations:
+      required: true
+
+  - type: dropdown
+    id: client
+    attributes:
+      label: MCP client
+      options:
+        - Claude Desktop
+        - VS Code Copilot
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install_method
+    attributes:
+      label: Install method
+      options:
+        - pip install from repo
+        - cloned and installed locally
+        - other
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 23H2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: workflow
+    attributes:
+      label: Workflow you attempted
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_worked
+    attributes:
+      label: What worked
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_didnt
+    attributes:
+      label: What didn't work or was confusing
+    validations:
+      required: true
+
+  - type: input
+    id: time_to_success
+    attributes:
+      label: Time to first successful run
+      placeholder: "e.g. 20 minutes"
