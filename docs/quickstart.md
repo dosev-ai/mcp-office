@@ -134,10 +134,11 @@ The file you’re trying to access is outside the allowed directories. Add its p
 Write operations are disabled by default. Add `"EXCEL_ENABLE_WRITE": "true"` to the `env` block in your MCP config and restart your client.
 
 **COM errors / Excel not responding**
-Make sure Excel is installed and not blocked on a dialog box. If you’re working with OneDrive-synced files, copy the file to a local path (e.g. `C:\Temp`) before running write operations — COM writes to OneDrive-synced paths can hang.
+Make sure Excel is installed and not blocked on a dialog box. If you’re working with cloud-synced files, copy the file to a local path (e.g. `C:\Temp`) before running write operations — COM writes to cloud-synced paths can hang.
 
 **`capabilities()` returns no tools**
 The server started but the tool list is empty. Check that the `command` path in your config points to the correct `.venv` Python executable and that `pip install -e ./excelmcp` completed without errors.
 
 **First run friction?**
 Open a [First Run Report](https://github.com/dosev-ai/mcp-office/issues/new?template=first_run_report.yml). These directly shape the next release.
+
