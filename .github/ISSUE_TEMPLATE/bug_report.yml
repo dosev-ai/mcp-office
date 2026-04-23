@@ -1,0 +1,88 @@
+name: Bug Report
+description: Report a bug or unexpected behaviour in any MCP Office server
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in as much detail as possible.
+
+  - type: dropdown
+    id: package
+    attributes:
+      label: Package
+      description: Which MCP server is affected?
+      options:
+        - excelmcp
+        - mailmcp
+        - pptmcp
+        - wordmcp
+        - multiple
+    validations:
+      required: true
+
+  - type: input
+    id: package_version
+    attributes:
+      label: Package version
+      description: Check pyproject.toml or pip show excelmcp
+      placeholder: "0.x.x"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: client
+    attributes:
+      label: MCP client
+      options:
+        - Claude Desktop
+        - VS Code Copilot
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Windows version
+      placeholder: "Windows 11 23H2"
+    validations:
+      required: true
+
+  - type: input
+    id: office_version
+    attributes:
+      label: Microsoft Office version
+      placeholder: "Microsoft 365 Version 2403"
+
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open ...
+        2. Call tool ...
+        3. See error ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: error_output
+    attributes:
+      label: Error output / logs
+      description: No API keys or personal paths please
+      render: shell
