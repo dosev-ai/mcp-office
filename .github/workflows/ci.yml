@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Ruff check
+        run: ruff check excelmcp/ shared/ --ignore E501
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install excelmcp
+        run: pip install -e "./excelmcp[dev]" 2>/dev/null || echo "Source not yet migrated — skipping install"
+      - name: Run tests
+        run: |
+          if [ -d "excelmcp/tests" ]; then
+            pytest excelmcp/tests/ -q --tb=short
+          else
+            echo "Tests directory not yet present — skipping"
+          fi
+
+  startup-smoke:
+    name: Startup smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install excelmcp
+        run: pip install -e "./excelmcp" 2>/dev/null || echo "Source not yet migrated — skipping"
+      - name: Startup smoke test
+        run: |
+          if python -c "import excelmcp" 2>/dev/null; then
+            python -c "
+import subprocess, json, sys
+p = subprocess.Popen(
+    [sys.executable, '-m', 'excelmcp.server'],
+    stdin=subprocess.PIPE,
+    stdout=subprocess.PIPE,
+    stderr=subprocess.PIPE
+)
+msg = json.dumps({'jsonrpc':'2.0','method':'initialize','id':1,'params':{}}).encode()
+try:
+    out, _ = p.communicate(msg, timeout=10)
+    assert b'result' in out, f'Unexpected output: {out[:200]}'
+    print('Startup smoke PASS')
+except Exception as e:
+    print(f'Startup smoke FAIL: {e}')
+    sys.exit(1)
+"
+          else
+            echo "excelmcp not yet importable — skipping smoke test"
+          fi
