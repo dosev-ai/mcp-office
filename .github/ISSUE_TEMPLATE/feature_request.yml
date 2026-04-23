@@ -1,0 +1,45 @@
+name: Feature Request
+description: Suggest a new tool, capability, or workflow improvement
+labels: ["enhancement"]
+body:
+  - type: dropdown
+    id: package
+    attributes:
+      label: Which package does this relate to?
+      options:
+        - excelmcp
+        - mailmcp
+        - pptmcp
+        - wordmcp
+        - cross-package / general
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What are you trying to accomplish?
+    validations:
+      required: true
+
+  - type: textarea
+    id: current_workaround
+    attributes:
+      label: Current workaround
+
+  - type: textarea
+    id: proposed_solution
+    attributes:
+      label: Proposed solution
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority for you
+      options:
+        - Nice to have
+        - Would unblock a real workflow
+        - Blocking — can't use the package without this
+    validations:
+      required: true
