@@ -934,7 +934,7 @@ All bulk replacements handle single-item inputs — no calling-pattern change ne
 - Showcase file built end-to-end exercising all 33 tools
   (`C:\Temp\excelmcp_showcase.xlsx` — UserStories, SalesData, Products sheets)
 - Action Worker bug entries created under Excel MCP epic
-  (`action-1771929453535` list_charts crash, `action-1771929474384` README sync)
+   (internal tracking references redacted in this public repository)
 
 ### v0.1.5 — 2026-02-23
 
