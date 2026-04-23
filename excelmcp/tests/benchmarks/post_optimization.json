@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-02-26T16:36:44.443987+00:00",
+  "label": "post_optimization",
+  "results": [
+    {
+      "function": "apply_cell_style",
+      "cells": 1000,
+      "time_seconds": 0.1856,
+      "peak_memory_mb": 0.72
+    },
+    {
+      "function": "apply_cell_style",
+      "cells": 5000,
+      "time_seconds": 0.7805,
+      "peak_memory_mb": 2.43
+    },
+    {
+      "function": "apply_cell_style",
+      "cells": 10000,
+      "time_seconds": 1.5322,
+      "peak_memory_mb": 4.61
+    },
+    {
+      "function": "apply_alignment",
+      "cells": 1000,
+      "time_seconds": 0.1388,
+      "peak_memory_mb": 0.72
+    },
+    {
+      "function": "apply_alignment",
+      "cells": 5000,
+      "time_seconds": 0.5646,
+      "peak_memory_mb": 2.43
+    },
+    {
+      "function": "apply_alignment",
+      "cells": 10000,
+      "time_seconds": 1.1283,
+      "peak_memory_mb": 4.61
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "generated_at": "2026-02-26T16:36:44.442987+00:00",
+  "label": "pre_optimization_simulated",
+  "results": [
+    {
+      "function": "apply_cell_style",
+      "cells": 1000,
+      "time_seconds": 0.4462,
+      "peak_memory_mb": 0.83
+    },
+    {
+      "function": "apply_cell_style",
+      "cells": 5000,
+      "time_seconds": 2.0411,
+      "peak_memory_mb": 2.76
+    },
+    {
+      "function": "apply_cell_style",
+      "cells": 10000,
+      "time_seconds": 3.647,
+      "peak_memory_mb": 5.46
+    },
+    {
+      "function": "apply_alignment",
+      "cells": 1000,
+      "time_seconds": 0.2521,
+      "peak_memory_mb": 0.7
+    },
+    {
+      "function": "apply_alignment",
+      "cells": 5000,
+      "time_seconds": 1.1416,
+      "peak_memory_mb": 2.76
+    },
+    {
+      "function": "apply_alignment",
+      "cells": 10000,
+      "time_seconds": 2.7557,
+      "peak_memory_mb": 5.46
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+[project]
+name = "excelmcp"
+version = "0.6.0"
+requires-python = ">=3.11"
+dependencies = [
+    "fastmcp>=3.0.0,<4",
+    "openpyxl>=3.1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-mock>=3.12", "ruff>=0.4", "pytest-socket>=0.7"]
+com = ["pywin32>=306"]  # Windows-only; required for integration COM tests (pytest -m integration)
+
+[project.scripts]
+excelmcp = "excelmcp.server:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["excelmcp", "mcpshared"]
+
+[tool.setuptools.package-dir]
+excelmcp = "src/excelmcp"
+mcpshared = "../shared/src/mcpshared"
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: unit tests",
+    "smoke: smoke tests",
+    "integration: requires live Excel/Office (deselect with -m 'not integration')",
+]
+testpaths = ["tests"]
+addopts = "--strict-markers --ignore=tests/test_split_result.txt"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+# E501 excluded: codebase has varied legacy line lengths; reformatting is out-of-scope for this sprint
+extend-ignore = ["E501"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["E402"]
+
+# Keep the sibling shared package editable for uv-based local workflows too.
+[tool.uv.sources]
+mcpshared = { path = "../shared", editable = true }
