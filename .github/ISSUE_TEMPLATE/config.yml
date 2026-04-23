@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question or share feedback
+    url: https://github.com/dosev-ai/mcp-office/discussions/new?category=General
+    about: For questions, ideas, and first-run feedback — use GitHub Discussions
