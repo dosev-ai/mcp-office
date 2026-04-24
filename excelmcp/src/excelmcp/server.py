@@ -10,6 +10,31 @@ import os
 import sys
 from urllib.parse import unquote
 
+# ---------------------------------------------------------------------------
+# Namespace-package shadow fix — must run before any excelmcp.* imports.
+# When `python -m excelmcp.server` is run from the repo root, Python prepends
+# '' (CWD) to sys.path and discovers excelmcp/ as a namespace package,
+# shadowing the editable-install package at src/excelmcp/.  This causes
+# `from excelmcp import __version__` (and relative equivalents) to fail with
+# ImportError because the namespace package has no __init__.py.
+# ---------------------------------------------------------------------------
+def _fix_namespace_shadow() -> None:
+    import importlib as _il
+    pkg = sys.modules.get("excelmcp")
+    if pkg is not None and getattr(pkg, "__file__", None) is None:
+        # Namespace package detected — find the real src/ dir and reimport.
+        _src = os.path.normpath(
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
+        )
+        del sys.modules["excelmcp"]
+        if _src not in sys.path:
+            sys.path.insert(0, _src)
+        _il.import_module("excelmcp")
+
+_fix_namespace_shadow()
+del _fix_namespace_shadow
+# ---------------------------------------------------------------------------
+
 # Suppress FastMCP startup banner, upgrade nag, and docket.worker noise
 # before FastMCP is imported so the setting takes effect at construction time.
 os.environ.setdefault("FASTMCP_SHOW_CLI_BANNER", "false")
