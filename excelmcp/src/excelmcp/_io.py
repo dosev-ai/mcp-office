@@ -9,7 +9,7 @@ from typing import Any
 
 from openpyxl.utils import column_index_from_string as _col_idx
 
-from excelmcp import __version__
+from . import __version__
 from excelmcp._active_wb import _check_file_not_open_in_excel
 from excelmcp._metadata_contract import CONTRACT_VERSION
 from excelmcp.runtime_config import get_effective_policy
