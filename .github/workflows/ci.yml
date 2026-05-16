@@ -47,12 +47,11 @@ jobs:
         env:
           EXCEL_ALLOWLIST_ROOTS: /tmp
         run: |
-          python - << 'PYEOF'
-          import excelmcp
+          cd /tmp && python - << 'PYEOF'
           from excelmcp import workbook_openpyxl as wb
           result = wb.capabilities()
           assert "tools" in result, "capabilities() missing 'tools' key"
           assert "capabilities_v2" in result, "capabilities() missing 'capabilities_v2' key"
-          assert len(result["tools"]) >= 60, f"Expected >= 60 tools, got {len(result['tools'])}"
-          print(f"Startup smoke PASS — {len(result['tools'])} tools, capabilities_v2 present")
+          assert len(result["tools"]) >= 60, "Expected >= 60 tools, got " + str(len(result["tools"]))
+          print("Startup smoke PASS - " + str(len(result["tools"])) + " tools, capabilities_v2 present")
           PYEOF
