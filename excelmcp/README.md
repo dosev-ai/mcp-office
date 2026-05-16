@@ -656,6 +656,17 @@ All implementation modules (`_core.py`, `_ooxml.py`, `_com.py`, `_advanced.py`, 
 
 ## Changelog
 
+See [`../CHANGELOG.md`](../CHANGELOG.md) for the full release history.
+
+### Latest — capabilities_v2 + server decomposition ([5cd6dad](https://github.com/dosev-ai/mcp-office/commit/5cd6dad))
+
+`capabilities()` now returns a machine-readable `capabilities_v2` object (TOOL_REGISTRY 64 entries,
+17 dispatcher vocabularies, per-tool gate metadata, tool modes). `format()` dispatcher added.
+Server layer decomposed into focused modules. `session_mode` stubs removed. See
+[`../shared/design/capabilities_schema_v1.md`](../shared/design/capabilities_schema_v1.md) for schema spec.
+
+---
+
 ### Governed Write — Active-Workbook Sprint (2026-03-13)
 
 **Governed COM write for `cell` and `range_io`; 35 new tests (D-01..D-12, E-01..E-11, F/G-series); tool count unchanged at 57**
