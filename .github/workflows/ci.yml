@@ -14,11 +14,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Install ruff
         run: pip install ruff
       - name: Ruff check
-        run: ruff check excelmcp/ shared/ --ignore E501
+        run: ruff check excelmcp/src shared/ --ignore E501
 
   test:
     name: Tests
@@ -27,16 +27,11 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Install excelmcp
-        run: pip install -e "./excelmcp[dev]" 2>/dev/null || echo "Source not yet migrated — skipping install"
-      - name: Run tests
-        run: |
-          if [ -d "excelmcp/tests" ]; then
-            pytest excelmcp/tests/ -q --tb=short
-          else
-            echo "Tests directory not yet present — skipping"
-          fi
+        run: pip install -e "./excelmcp[dev]"
+      - name: Run unit tests
+        run: pytest excelmcp/tests/ -q --tb=short -m "not integration"
 
   startup-smoke:
     name: Startup smoke
@@ -45,29 +40,18 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.12"
       - name: Install excelmcp
-        run: pip install -e "./excelmcp" 2>/dev/null || echo "Source not yet migrated — skipping"
+        run: pip install -e "./excelmcp"
       - name: Startup smoke test
+        env:
+          EXCEL_ALLOWLIST_ROOTS: /tmp
         run: |
-          if python -c "import excelmcp" 2>/dev/null; then
-            python -c "
-import subprocess, json, sys
-p = subprocess.Popen(
-    [sys.executable, '-m', 'excelmcp.server'],
-    stdin=subprocess.PIPE,
-    stdout=subprocess.PIPE,
-    stderr=subprocess.PIPE
-)
-msg = json.dumps({'jsonrpc':'2.0','method':'initialize','id':1,'params':{}}).encode()
-try:
-    out, _ = p.communicate(msg, timeout=10)
-    assert b'result' in out, f'Unexpected output: {out[:200]}'
-    print('Startup smoke PASS')
-except Exception as e:
-    print(f'Startup smoke FAIL: {e}')
-    sys.exit(1)
-"
-          else
-            echo "excelmcp not yet importable — skipping smoke test"
-          fi
+          cd /tmp && python - << 'PYEOF'
+          from excelmcp import workbook_openpyxl as wb
+          result = wb.capabilities()
+          assert "tools" in result, "capabilities() missing 'tools' key"
+          assert "capabilities_v2" in result, "capabilities() missing 'capabilities_v2' key"
+          assert len(result["tools"]) >= 60, "Expected >= 60 tools, got " + str(len(result["tools"]))
+          print("Startup smoke PASS - " + str(len(result["tools"])) + " tools, capabilities_v2 present")
+          PYEOF

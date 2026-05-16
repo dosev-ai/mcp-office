@@ -10,31 +10,6 @@ import os
 import sys
 from urllib.parse import unquote
 
-# ---------------------------------------------------------------------------
-# Namespace-package shadow fix — must run before any excelmcp.* imports.
-# When `python -m excelmcp.server` is run from the repo root, Python prepends
-# '' (CWD) to sys.path and discovers excelmcp/ as a namespace package,
-# shadowing the editable-install package at src/excelmcp/.  This causes
-# `from excelmcp import __version__` (and relative equivalents) to fail with
-# ImportError because the namespace package has no __init__.py.
-# ---------------------------------------------------------------------------
-def _fix_namespace_shadow() -> None:
-    import importlib as _il
-    pkg = sys.modules.get("excelmcp")
-    if pkg is not None and getattr(pkg, "__file__", None) is None:
-        # Namespace package detected — find the real src/ dir and reimport.
-        _src = os.path.normpath(
-            os.path.join(os.path.dirname(os.path.abspath(__file__)), os.pardir)
-        )
-        del sys.modules["excelmcp"]
-        if _src not in sys.path:
-            sys.path.insert(0, _src)
-        _il.import_module("excelmcp")
-
-_fix_namespace_shadow()
-del _fix_namespace_shadow
-# ---------------------------------------------------------------------------
-
 # Suppress FastMCP startup banner, upgrade nag, and docket.worker noise
 # before FastMCP is imported so the setting takes effect at construction time.
 os.environ.setdefault("FASTMCP_SHOW_CLI_BANNER", "false")
@@ -59,32 +34,38 @@ logging.getLogger("mcp.server.lowlevel.server").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
 
 import excelmcp.server_acp  # noqa: F401, E402  -- registers ACP tool
-import excelmcp.server_batch  # noqa: F401, E402 � side-effect: registers batch tools
-import excelmcp.server_chart  # noqa: F401, E402 � side-effect: registers chart tools
-import excelmcp.server_com  # noqa: F401, E402 � side-effect: registers COM tools
-import excelmcp.server_format  # noqa: F401, E402 � side-effect: registers format tools
-import excelmcp.server_io  # noqa: F401, E402 � side-effect: registers I/O tools
-import excelmcp.server_metadata_prompts  # noqa: F401, E402  – registers metadata prompts & contract resource
-import excelmcp.server_ops  # noqa: F401, E402 � side-effect: registers ops tools
+import excelmcp.server_batch  # noqa: F401, E402 - side-effect: registers batch tools
+import excelmcp.server_chart  # noqa: F401, E402 - side-effect: registers chart tools
+import excelmcp.server_com  # noqa: F401, E402 - side-effect: registers COM tools
+import excelmcp.server_format  # noqa: F401, E402 - side-effect: registers format tools
+import excelmcp.server_io  # noqa: F401, E402 - side-effect: registers capabilities + metadata resources
+import excelmcp.server_metadata_prompts  # noqa: F401, E402  -- registers metadata prompts & contract resource
+import excelmcp.server_ops  # noqa: F401, E402 - side-effect: registers ops tools
 import excelmcp.server_prompts_analysis  # noqa: F401, E402 -- registers analysis prompts
 import excelmcp.server_prompts_format  # noqa: F401, E402 -- registers format prompts
 import excelmcp.server_prompts_mgmt  # noqa: F401, E402 -- registers mgmt prompts
 import excelmcp.server_prompts_workflow  # noqa: F401, E402 -- registers workflow prompts
-import excelmcp.server_review  # noqa: F401, E402  – registers review tools
+import excelmcp.server_range  # noqa: F401, E402 - side-effect: registers range tools
+import excelmcp.server_review  # noqa: F401, E402  -- registers review tools
+import excelmcp.server_sheet  # noqa: F401, E402 - side-effect: registers sheet tools
 import excelmcp.server_snapshot  # noqa: F401, E402  -- side-effect: registers snapshot/diff tools
+import excelmcp.server_table_io  # noqa: F401, E402 - side-effect: registers table/import tools
+import excelmcp.server_workbook  # noqa: F401, E402 - side-effect: registers workbook tools
 from excelmcp.server_format import apply_style  # noqa: E402, F401
 
 # ---------------------------------------------------------------------------
 # Backward-compatible re-exports (for tests that import symbols from server)
 # ---------------------------------------------------------------------------
-from excelmcp.server_io import (  # noqa: E402, F401
-    append_rows,
+from excelmcp.server_range import (  # noqa: E402, F401
     cell,
-    evaluate_formula,
-    named_range,
     range_io,
-    sheet,
 )
+from excelmcp.server_sheet import sheet  # noqa: E402, F401
+from excelmcp.server_table_io import (  # noqa: E402, F401
+    append_rows,
+    named_range,
+)
+from excelmcp.server_workbook import evaluate_formula  # noqa: E402, F401
 from excelmcp.server_ops import (  # noqa: E402, F401
     cell_comment,
     cols,

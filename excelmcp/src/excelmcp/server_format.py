@@ -12,6 +12,7 @@ from __future__ import annotations
 from fastmcp.exceptions import ToolError
 
 from excelmcp import workbook_openpyxl as wb
+from excelmcp._core import _check_confirm, _check_write
 from excelmcp._server_instance import mcp
 from excelmcp.workbook_openpyxl import ExcelMCPError
 
@@ -262,3 +263,206 @@ def apply_conditional_format(
                    condition=condition, format_spec=format_spec, formula=formula, confirm=confirm)
     except ExcelMCPError as e:
         raise ToolError(str(e)) from e
+
+
+# ---------------------------------------------------------------------------
+# format dispatcher (Phase 3E) — single entry-point for all format operations
+# ---------------------------------------------------------------------------
+
+_FORMAT_VALID_OPERATIONS = (
+    "alignment",
+    "border",
+    "conditional",
+    "copy_format",
+    "number_format",
+    "sheet_list",
+    "style",
+    "write_with_format",
+)
+
+
+@mcp.tool(name="format")
+def format_dispatcher(
+    operation: str,
+    path: str,
+    # common
+    sheet: str | None = None,
+    address: str | None = None,
+    # apply_style extras
+    ranges: list[str] | None = None,
+    bold: bool | None = None,
+    italic: bool | None = None,
+    font_size: float | None = None,
+    font_color: str | None = None,
+    bg_color: str | None = None,
+    # apply_alignment
+    horizontal: str | None = None,
+    vertical: str | None = None,
+    wrap_text: bool | None = None,
+    # add_border
+    border_style: str = "thin",
+    color: str = "000000",
+    # apply_format_to_sheet_list
+    sheets: list[str] | None = None,
+    style: dict | None = None,
+    number_format: str | None = None,
+    alignment: dict | None = None,
+    column_widths: dict | None = None,
+    row_heights: dict | None = None,
+    # copy_range_format
+    src_sheet: str | None = None,
+    src_address: str | None = None,
+    dst_sheet: str | None = None,
+    dst_address: str | None = None,
+    copy_border: bool = False,
+    # write_range_with_format
+    data: list | None = None,
+    # apply_number_format
+    format_code: str | None = None,
+    # apply_conditional_format
+    rule_type: str | None = None,
+    condition: str | None = None,
+    format_spec: dict | None = None,
+    formula: str | None = None,
+    confirm: bool = False,
+) -> dict:
+    """Unified format dispatcher — routes 8 format operations through a single tool.
+
+    Requires ``EXCEL_ENABLE_WRITE=true`` and ``confirm=True``.
+
+    operation vocabulary
+    --------------------
+    "number_format"   Apply a number-format code to a cell or range.
+                      Params: path, sheet, address, format_code, confirm.
+
+    "style"           Apply font/fill styling to one or more ranges.
+                      Params: path, sheet, address (or ranges), bold, italic,
+                      font_size, font_color, bg_color, confirm.
+
+    "alignment"       Apply horizontal/vertical/wrap_text alignment.
+                      Params: path, sheet, address, horizontal, vertical,
+                      wrap_text, confirm.
+
+    "border"          Apply border to all sides of a cell or range.
+                      Params: path, sheet, address, border_style, color, confirm.
+
+    "sheet_list"      Apply formatting to the same address across multiple sheets.
+                      Params: path, sheets, address, style, number_format,
+                      alignment, column_widths, row_heights, confirm.
+
+    "copy_format"     Copy formatting only (no values) from src to dst range.
+                      Params: path, src_sheet, src_address, dst_sheet,
+                      dst_address, copy_border, confirm.
+
+    "write_with_format"  Write a 2-D array and apply formatting in one call.
+                      Params: path, sheet, address, data, style, number_format,
+                      alignment, confirm.
+
+    "conditional"     Apply a conditional-formatting rule to a range.
+                      Params: path, sheet, address, rule_type, condition,
+                      format_spec, formula, confirm.
+
+    Deprecated aliases
+    ------------------
+    The 8 standalone tools (apply_number_format, apply_style, apply_alignment,
+    add_border, apply_format_to_sheet_list, copy_range_format,
+    write_range_with_format, apply_conditional_format) remain callable but are
+    deprecated. Prefer this dispatcher for all new integrations.
+    """
+    _check_write()
+    _check_confirm(confirm)
+
+    if operation == "number_format":
+        try:
+            return wb.apply_number_format(
+                path, sheet, address, format_code, confirm=confirm
+            )
+        except ExcelMCPError as e:
+            raise ToolError(str(e)) from e
+
+    elif operation == "style":
+        if address is not None and ranges is not None:
+            raise ToolError("Provide address or ranges, not both")
+        if address is not None:
+            resolved_ranges = [address]
+        elif ranges is not None:
+            resolved_ranges = ranges
+        else:
+            raise ToolError("address or ranges is required for operation='style'")
+        try:
+            return wb.apply_style_to_ranges(
+                path, sheet, resolved_ranges,
+                bold=bold, italic=italic,
+                font_size=font_size, font_color=font_color, bg_color=bg_color,
+                confirm=confirm,
+            )
+        except ExcelMCPError as e:
+            raise ToolError(str(e)) from e
+
+    elif operation == "alignment":
+        try:
+            return wb.apply_alignment(
+                path, sheet, address,
+                horizontal=horizontal, vertical=vertical,
+                wrap_text=wrap_text, confirm=confirm,
+            )
+        except ExcelMCPError as e:
+            raise ToolError(str(e)) from e
+
+    elif operation == "border":
+        try:
+            return wb.add_border(
+                path, sheet, address,
+                border_style=border_style, color=color, confirm=confirm,
+            )
+        except ExcelMCPError as e:
+            raise ToolError(str(e)) from e
+
+    elif operation == "sheet_list":
+        try:
+            return wb.apply_format_to_sheet_list(
+                path, sheets=sheets, address=address, style=style,
+                number_format=number_format, alignment=alignment,
+                column_widths=column_widths, row_heights=row_heights,
+                confirm=confirm,
+            )
+        except ExcelMCPError as e:
+            raise ToolError(str(e)) from e
+
+    elif operation == "copy_format":
+        try:
+            return wb.copy_range_format(
+                path, src_sheet=src_sheet, src_address=src_address,
+                dst_sheet=dst_sheet, dst_address=dst_address,
+                copy_border=copy_border, confirm=confirm,
+            )
+        except ExcelMCPError as e:
+            raise ToolError(str(e)) from e
+
+    elif operation == "write_with_format":
+        try:
+            from excelmcp.workbook_openpyxl import write_range_with_format as _fn
+            return _fn(
+                path=path, sheet=sheet, address=address, data=data,
+                style=style, number_format=number_format,
+                alignment=alignment, confirm=confirm,
+            )
+        except ExcelMCPError as e:
+            raise ToolError(str(e)) from e
+
+    elif operation == "conditional":
+        try:
+            from excelmcp.workbook_openpyxl import apply_conditional_format as _fn
+            return _fn(
+                path=path, sheet=sheet, address=address,
+                rule_type=rule_type, condition=condition,
+                format_spec=format_spec, formula=formula, confirm=confirm,
+            )
+        except ExcelMCPError as e:
+            raise ToolError(str(e)) from e
+
+    else:
+        raise ToolError(
+            f"Unknown format operation: {operation!r}. "
+            f"Valid: {', '.join(sorted(_FORMAT_VALID_OPERATIONS))}"
+        )

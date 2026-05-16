@@ -39,7 +39,7 @@ def wb_path(tmp_path, monkeypatch):
 def test_write_cell_calls_conflict_guard(wb_path, monkeypatch):
     """C-01: write_cell invokes _check_file_not_open_in_excel with the resolved path."""
     guard = MagicMock()
-    monkeypatch.setattr("excelmcp._io._check_file_not_open_in_excel", guard)
+    monkeypatch.setattr("excelmcp._range_write._check_file_not_open_in_excel", guard)
 
     from excelmcp._io import write_cell
     write_cell(wb_path, "Sheet1", "B1", "value", confirm=True)
@@ -56,7 +56,7 @@ def test_write_cell_calls_conflict_guard(wb_path, monkeypatch):
 def test_write_range_calls_conflict_guard(wb_path, monkeypatch):
     """C-02: write_range invokes _check_file_not_open_in_excel with the resolved path."""
     guard = MagicMock()
-    monkeypatch.setattr("excelmcp._io._check_file_not_open_in_excel", guard)
+    monkeypatch.setattr("excelmcp._range_write._check_file_not_open_in_excel", guard)
 
     from excelmcp._io import write_range
     write_range(wb_path, "Sheet1", "A1", [["a", "b"]], confirm=True)
@@ -73,7 +73,7 @@ def test_write_range_calls_conflict_guard(wb_path, monkeypatch):
 def test_append_rows_calls_conflict_guard(wb_path, monkeypatch):
     """C-03: append_rows invokes _check_file_not_open_in_excel with the resolved path."""
     guard = MagicMock()
-    monkeypatch.setattr("excelmcp._io._check_file_not_open_in_excel", guard)
+    monkeypatch.setattr("excelmcp._range_write._check_file_not_open_in_excel", guard)
 
     from excelmcp._io import append_rows
     append_rows(wb_path, "Sheet1", [["row1col1"]], confirm=True)
@@ -93,7 +93,7 @@ def test_create_workbook_calls_conflict_guard(tmp_path, monkeypatch):
     monkeypatch.setenv("EXCEL_ENABLE_WRITE", "true")
 
     guard = MagicMock()
-    monkeypatch.setattr("excelmcp._io._check_file_not_open_in_excel", guard)
+    monkeypatch.setattr("excelmcp._range_write._check_file_not_open_in_excel", guard)
 
     new_path = str(tmp_path / "new.xlsx")
     from excelmcp._io import create_workbook
@@ -116,7 +116,7 @@ def test_write_cell_blocked_by_guard_validation_error(wb_path, monkeypatch):
     def _raise_guard(path: Path) -> None:
         raise ValidationError("Workbook is open in Excel. Close it first.")
 
-    monkeypatch.setattr("excelmcp._io._check_file_not_open_in_excel", _raise_guard)
+    monkeypatch.setattr("excelmcp._range_write._check_file_not_open_in_excel", _raise_guard)
 
     from excelmcp._io import write_cell
     with pytest.raises(ValidationError):
@@ -136,7 +136,7 @@ def test_write_range_blocked_by_guard_office_com_error(wb_path, monkeypatch):
     def _raise_guard(path: Path) -> None:
         raise OfficeCOMError("Could not verify file lock state via COM")
 
-    monkeypatch.setattr("excelmcp._io._check_file_not_open_in_excel", _raise_guard)
+    monkeypatch.setattr("excelmcp._range_write._check_file_not_open_in_excel", _raise_guard)
 
     from excelmcp._io import write_range
     with pytest.raises(OfficeCOMError):
@@ -162,11 +162,11 @@ def test_guard_called_before_file_load(wb_path, monkeypatch):
         return real_load_wb(resolved, for_write=for_write)
 
     # Capture real _load_wb before patching
-    import excelmcp._io as _io_mod
-    real_load_wb = _io_mod._load_wb
+    import excelmcp._range_write as _rw_mod
+    real_load_wb = _rw_mod._load_wb
 
-    monkeypatch.setattr("excelmcp._io._check_file_not_open_in_excel", _tracking_guard)
-    monkeypatch.setattr("excelmcp._io._load_wb", _tracking_load)
+    monkeypatch.setattr("excelmcp._range_write._check_file_not_open_in_excel", _tracking_guard)
+    monkeypatch.setattr("excelmcp._range_write._load_wb", _tracking_load)
 
     from excelmcp._io import write_cell
     write_cell(wb_path, "Sheet1", "B2", "test_order", confirm=True)

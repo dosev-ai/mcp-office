@@ -69,7 +69,7 @@ def test_matrix_com_disabled_guard_noop(fn_name, write_env, monkeypatch):
     monkeypatch.setenv("EXCEL_ENABLE_COM", "false")
 
     guard_spy = MagicMock(wraps=lambda path: None)  # spy that calls real no-op
-    monkeypatch.setattr("excelmcp._io._check_file_not_open_in_excel", guard_spy)
+    monkeypatch.setattr("excelmcp._range_write._check_file_not_open_in_excel", guard_spy)
 
     result = _invoke_write_fn(fn_name, write_env)
 
@@ -91,7 +91,7 @@ def test_matrix_com_enabled_file_not_open_write_proceeds(fn_name, write_env, mon
     def _clean_guard(path: Path) -> None:
         pass  # file is not open — guard passes
 
-    monkeypatch.setattr("excelmcp._io._check_file_not_open_in_excel", _clean_guard)
+    monkeypatch.setattr("excelmcp._range_write._check_file_not_open_in_excel", _clean_guard)
 
     result = _invoke_write_fn(fn_name, write_env)
     assert result is not None
@@ -112,7 +112,7 @@ def test_matrix_file_is_open_write_blocked(fn_name, write_env, monkeypatch):
             "Close it in Excel first, or use a copy of the file."
         )
 
-    monkeypatch.setattr("excelmcp._io._check_file_not_open_in_excel", _blocking_guard)
+    monkeypatch.setattr("excelmcp._range_write._check_file_not_open_in_excel", _blocking_guard)
 
     with pytest.raises(ValidationError):
         _invoke_write_fn(fn_name, write_env)
@@ -130,7 +130,7 @@ def test_matrix_com_error_fail_closed(fn_name, write_env, monkeypatch):
     def _com_error_guard(path: Path) -> None:
         raise OfficeCOMError("Could not verify file lock state via COM")
 
-    monkeypatch.setattr("excelmcp._io._check_file_not_open_in_excel", _com_error_guard)
+    monkeypatch.setattr("excelmcp._range_write._check_file_not_open_in_excel", _com_error_guard)
 
     with pytest.raises(OfficeCOMError):
         _invoke_write_fn(fn_name, write_env)

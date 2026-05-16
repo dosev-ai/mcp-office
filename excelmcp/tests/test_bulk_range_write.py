@@ -11,6 +11,7 @@ import pytest
 from fastmcp.exceptions import ToolError
 
 import excelmcp._io as io_mod
+import excelmcp._range_write as rw_mod
 import excelmcp.server_batch as server_batch
 
 from excelmcp.workbook_openpyxl import (
@@ -270,7 +271,7 @@ class TestBulkWriteCells:
         def _boom(_wb, _resolved):
             raise ValueError("boom")
 
-        monkeypatch.setattr(io_mod, "_save_and_evict", _boom)
+        monkeypatch.setattr(rw_mod, "_save_and_evict", _boom)
 
         with pytest.raises(ValidationError, match="bulk_write_cells failed: boom"):
             bulk_write_cells(
