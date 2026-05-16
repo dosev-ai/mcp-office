@@ -658,7 +658,7 @@ All implementation modules (`_core.py`, `_ooxml.py`, `_com.py`, `_advanced.py`, 
 
 See [`../CHANGELOG.md`](../CHANGELOG.md) for the full release history.
 
-### Latest — capabilities_v2 + server decomposition ([5cd6dad](https://github.com/dosev-ai/mcp-office/commit/5cd6dad))
+### v0.3 — capabilities_v2 + server decomposition ([5cd6dad](https://github.com/dosev-ai/mcp-office/commit/5cd6dad))
 
 `capabilities()` now returns a machine-readable `capabilities_v2` object (TOOL_REGISTRY 64 entries,
 17 dispatcher vocabularies, per-tool gate metadata, tool modes). `format()` dispatcher added.
