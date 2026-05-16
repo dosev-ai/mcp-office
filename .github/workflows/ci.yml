@@ -43,25 +43,16 @@ jobs:
           python-version: "3.12"
       - name: Install excelmcp
         run: pip install -e "./excelmcp"
-      - name: Write smoke script
-        run: |
-          cat > /tmp/smoke.py << 'PYEOF'
-          import subprocess, json, sys, os
-          p = subprocess.Popen(
-              [sys.executable, "-m", "excelmcp.server"],
-              stdin=subprocess.PIPE,
-              stdout=subprocess.PIPE,
-              stderr=subprocess.PIPE,
-              env={**os.environ, "EXCEL_ALLOWLIST_ROOTS": "/tmp"},
-          )
-          msg = json.dumps({"jsonrpc": "2.0", "method": "initialize", "id": 1, "params": {}}).encode()
-          try:
-              out, _ = p.communicate(msg, timeout=10)
-              assert b"result" in out, "Unexpected output: " + repr(out[:200])
-              print("Startup smoke PASS")
-          except Exception as e:
-              print("Startup smoke FAIL: " + str(e))
-              sys.exit(1)
-          PYEOF
       - name: Startup smoke test
-        run: python /tmp/smoke.py
+        env:
+          EXCEL_ALLOWLIST_ROOTS: /tmp
+        run: |
+          python - << 'PYEOF'
+          import excelmcp
+          from excelmcp import workbook_openpyxl as wb
+          result = wb.capabilities()
+          assert "tools" in result, "capabilities() missing 'tools' key"
+          assert "capabilities_v2" in result, "capabilities() missing 'capabilities_v2' key"
+          assert len(result["tools"]) >= 60, f"Expected >= 60 tools, got {len(result['tools'])}"
+          print(f"Startup smoke PASS — {len(result['tools'])} tools, capabilities_v2 present")
+          PYEOF
