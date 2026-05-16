@@ -11,7 +11,7 @@ All tests run without live Excel. COM is fully mocked.
 from __future__ import annotations
 
 import sys
-from unittest.mock import MagicMock, PropertyMock, call, patch
+from unittest.mock import MagicMock, PropertyMock, patch
 
 import pytest
 

@@ -574,38 +574,29 @@ class TestIoRouting:
 
 class TestServerIoSmoke:
 
-    def test_g01_cell_write_session_true_routes_to_com(self, monkeypatch, tmp_path):
-        """G-01: cell(operation='write', session_mode=True) routes to _write_cell_via_com."""
-        monkeypatch.setenv("EXCEL_ENABLE_WRITE", "true")
-        monkeypatch.setenv("EXCEL_ALLOWLIST_ROOTS", str(tmp_path))
+    def test_g01_cell_write_session_mode_removed(self, monkeypatch, tmp_path):
+        """G-01: cell() no longer accepts session_mode — Phase 3D stub removal.
 
-        wb_file = str(tmp_path / "wb.xlsx")
+        Verifies that 'session_mode' is not in cell's signature.
+        """
+        import inspect
+        from excelmcp.server_io import cell
+        params = list(inspect.signature(cell).parameters.keys())
+        assert "session_mode" not in params, (
+            "session_mode stub must be removed from cell() per Phase 3D spec"
+        )
 
-        with patch("excelmcp._active_wb._write_cell_via_com", return_value={"ok": True, "previous_value": None}) as mock_com:
-            from excelmcp.server_io import cell
+    def test_g02_range_io_session_mode_removed(self, monkeypatch, tmp_path):
+        """G-02: range_io() no longer accepts session_mode — Phase 3D stub removal."""
+        import inspect
+        from excelmcp.server_io import range_io
+        params = list(inspect.signature(range_io).parameters.keys())
+        assert "session_mode" not in params, (
+            "session_mode stub must be removed from range_io() per Phase 3D spec"
+        )
 
-            result = cell(operation="write", path=wb_file, sheet="Sheet1", address="A1", value="test", confirm=True, session_mode=True)
-
-        mock_com.assert_called_once()
-        assert result["ok"] is True
-
-    def test_g02_range_io_write_session_true_routes_to_com(self, monkeypatch, tmp_path):
-        """G-02: range_io(operation='write', session_mode=True) routes to _write_range_via_com."""
-        monkeypatch.setenv("EXCEL_ENABLE_WRITE", "true")
-        monkeypatch.setenv("EXCEL_ALLOWLIST_ROOTS", str(tmp_path))
-
-        wb_file = str(tmp_path / "wb.xlsx")
-
-        with patch("excelmcp._active_wb._write_range_via_com", return_value={"ok": True, "cells_written": 4}) as mock_com:
-            from excelmcp.server_io import range_io
-
-            result = range_io(operation="write", path=wb_file, sheet="Sheet1", address="A1", values=[[1, 2], [3, 4]], confirm=True, session_mode=True)
-
-        mock_com.assert_called_once()
-        assert result["cells_written"] == 4
-
-    def test_g03_cell_read_with_session_true_uses_openpyxl(self, monkeypatch, tmp_path):
-        """G-03: cell(operation='read', session_mode=True) uses openpyxl (session_mode ignored for reads)."""
+    def test_g03_cell_read_uses_openpyxl(self, monkeypatch, tmp_path):
+        """G-03: cell(operation='read') uses openpyxl path."""
         monkeypatch.setenv("EXCEL_ALLOWLIST_ROOTS", str(tmp_path))
 
         wb_file = tmp_path / "wb.xlsx"
@@ -619,21 +610,19 @@ class TestServerIoSmoke:
         with patch("excelmcp._active_wb._write_cell_via_com") as mock_com:
             from excelmcp.server_io import cell
 
-            result = cell(operation="read", path=str(wb_file), sheet="Sheet1", address="B3", session_mode=True)
+            result = cell(operation="read", path=str(wb_file), sheet="Sheet1", address="B3")
 
         mock_com.assert_not_called()
         assert result["value"] == 777
 
-    def test_g04_create_workbook_session_true_still_raises(self, monkeypatch, tmp_path):
-        """G-04: create_workbook(session_mode=True) → ToolError (not yet implemented)."""
-        monkeypatch.setenv("EXCEL_ENABLE_WRITE", "true")
-        monkeypatch.setenv("EXCEL_ALLOWLIST_ROOTS", str(tmp_path))
-
-        from fastmcp.exceptions import ToolError
+    def test_g04_create_workbook_session_mode_removed(self, monkeypatch, tmp_path):
+        """G-04: create_workbook() no longer accepts session_mode — Phase 3D stub removal."""
+        import inspect
         from excelmcp.server_io import create_workbook
-
-        with pytest.raises(ToolError, match="not yet implemented"):
-            create_workbook(path=str(tmp_path / "new.xlsx"), confirm=True, session_mode=True)
+        params = list(inspect.signature(create_workbook).parameters.keys())
+        assert "session_mode" not in params, (
+            "session_mode stub must be removed from create_workbook() per Phase 3D spec"
+        )
 
     def test_g05_capabilities_contains_enable_com_env_key(self):
         """G-05: capabilities() returns a dict with governance.enable_com_env key."""
