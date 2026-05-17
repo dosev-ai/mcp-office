@@ -1,0 +1,351 @@
+name: Bot Comment Gate (consolidated)
+
+# AI GENERATED CONTEXT
+# Current contract (action-1777360894757):
+# - `Bot Comment Closure Rate` is the ONLY authoritative required gate.
+# - `review-threads-gate` compatibility job has been removed; branch protection
+#   has been updated to remove that required check.
+# - GitHub thread resolution is NOT part of the merge policy for the bot-only
+#   review path; `/implemented`, `/deferred: <reason> (action-<id>)`, and
+#   `/rejected: <reason>` replies are the required completion signal.
+#
+# Historical note:
+# - the review-threads-gate compatibility job was removed in action-1777360894757.
+# - the old auto-resolve helper was removed because thread resolution is no
+#   longer part of the authoritative merge contract.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  pull_request_review:
+    types: [submitted, edited, dismissed]
+  pull_request_review_comment:
+    types: [created, edited]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR number to check manually'
+        required: true
+        type: string
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # REQUIRED status check — blocks merge until all bot inline comments have
+  # been dispositioned (/implemented, /deferred: <reason>, /rejected: <reason>).
+  # ---------------------------------------------------------------------------
+  bot-review-closure:
+    name: Bot Comment Closure Rate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      pull-requests: read
+      contents: read
+    if: |
+      github.event_name != 'pull_request_review_comment' ||
+      !contains(
+        fromJSON('["github-copilot[bot]","copilot-pull-request-reviewer","copilot-pull-request-reviewer[bot]","openai-codex[bot]","Copilot","chatgpt-codex-connector[bot]","chatgpt-codex-connector"]'),
+        github.actor
+      )
+    concurrency:
+      group: bot-review-closure-${{ github.event.pull_request.number || inputs.pr_number }}-${{ github.event_name }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Check bot comment dispositions
+        id: closure
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          REPO: ${{ github.repository }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # Gate: on push events, block until Copilot has submitted a review that
+          # includes inline comments. Without this, BCBR passes 0/0 (no comments yet)
+          # and auto-merge fires before Copilot's inline comments land.
+          # Re-triggers: pull_request_review:submitted fires when Copilot lands its
+          # review; pull_request_review_comment:created fires on each reply we post.
+          # Both re-run BCBR, which then enforces the full comment-disposition check.
+          #
+          # H-001 fix: jq filter matches all 7 known Copilot/bot login variants.
+          # H-003 fix: draft PRs skip the gate (Copilot never reviews drafts; GitHub
+          #            also blocks auto-merge on drafts so no merge-safety gap).
+          # H-004 fix: require at least one COMMENTED review (not just APPROVED),
+          #            because an APPROVED review may have zero inline comments.
+          # H-005 fix: --paginate ensures all review pages are fetched.
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
+            # H-003: skip for draft PRs — Copilot never reviews drafts and GitHub
+            # itself blocks auto-merge on them, so no merge-safety gap exists.
+            IS_DRAFT=$(gh api "repos/${REPO}/pulls/${PR_NUMBER}" --jq '.draft' 2>/dev/null || echo "false")
+            if [ "${IS_DRAFT}" = "true" ]; then
+              echo "ℹ️  Draft PR — skipping Copilot review gate."
+              echo "## Bot Review Closure Report" >> "$GITHUB_STEP_SUMMARY"
+              echo "ℹ️ **Draft PR** — Copilot review gate skipped. Enforces after ready-for-review." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+
+            # Require ≥1 COMMENTED review ON THE CURRENT HEAD SHA from a known bot login.
+            # P1 fix (3252686079): filter by commit_id==HEAD_SHA — historical reviews on
+            #   prior commits must not unblock the gate after a force-push/new commit.
+            # P2 fix (3252686080): fetch without --jq, write to temp file, sum in Python —
+            #   --paginate with --jq emits one result per page; multi-page output becomes
+            #   "0\n0" which != "0" and would falsely unblock the gate.
+            # H-002: capture API exit code separately for a clear failure diagnostic.
+            set +e
+            _TMP_REV=$(mktemp)
+            gh api "repos/${REPO}/pulls/${PR_NUMBER}/reviews" --paginate > "$_TMP_REV" 2>/tmp/bcbr_api_err
+            API_EXIT=$?
+            set -e
+            if [ "$API_EXIT" -ne 0 ]; then
+              echo "❌ GitHub API error fetching reviews (exit ${API_EXIT}):" >&2
+              cat /tmp/bcbr_api_err >&2
+              echo "## Bot Review Closure Report" >> "$GITHUB_STEP_SUMMARY"
+              echo "❌ **GitHub API error** — check token permissions (pull-requests: read required)." >> "$GITHUB_STEP_SUMMARY"
+              rm -f "$_TMP_REV"
+              exit 1
+            fi
+            COPILOT_COMMENTED=$(python3 -c "import json,sys,os; bot={'github-copilot[bot]','copilot-pull-request-reviewer[bot]','copilot-pull-request-reviewer','openai-codex[bot]','chatgpt-codex-connector[bot]','chatgpt-codex-connector','Copilot'}; sha=os.environ.get('HEAD_SHA',''); d=json.load(open(sys.argv[1])); print(sum(1 for r in d if r.get('user',{}).get('login','') in bot and r.get('state')=='COMMENTED' and (not sha or r.get('commit_id')==sha)))" "$_TMP_REV" 2>/dev/null || echo "0")
+            rm -f "$_TMP_REV"
+            if [ "${COPILOT_COMMENTED:-0}" = "0" ]; then
+              # Before blocking, check if all existing bot comments are already
+              # dispositioned.  If so, the fix commit addressed everything Copilot
+              # asked — no need to wait for a re-review of the new HEAD.
+              # (Copilot only auto-reviews once per PR; pushing a fix would otherwise
+              # permanently deadlock the gate.)
+              set +e
+              _TMP_CMTS=$(mktemp)
+              gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --paginate > "$_TMP_CMTS" 2>/dev/null
+              ALL_DISPOSED=$(python3 - "$_TMP_CMTS" <<'PYEOF'
+          import json, re, sys
+          bot_logins = {"github-copilot[bot]", "copilot-pull-request-reviewer", "copilot-pull-request-reviewer[bot]", "openai-codex[bot]", "Copilot", "chatgpt-codex-connector[bot]", "chatgpt-codex-connector"}
+          disposition_re = re.compile(r'^\s*/(implemented|deferred:|rejected:)', re.IGNORECASE | re.MULTILINE)
+          data = json.load(open(sys.argv[1]))
+          replies = {}
+          for c in data:
+              parent = c.get("in_reply_to_id")
+              if parent:
+                  replies.setdefault(parent, []).append(c)
+          bot_top = [c for c in data if c.get("user", {}).get("login", "") in bot_logins and c.get("in_reply_to_id") is None]
+          if not bot_top:
+              print("0")
+          else:
+              unresolved = [bc for bc in bot_top if not any(
+                  disposition_re.search(r.get("body", ""))
+                  for r in replies.get(bc["id"], [])
+                  if r.get("user", {}).get("login", "") not in bot_logins
+              )]
+              print("1" if not unresolved else "0")
+          PYEOF
+              )
+              rm -f "$_TMP_CMTS"
+              set -e
+              if [ "${ALL_DISPOSED:-0}" = "1" ]; then
+                echo "✅ All prior bot comments dispositioned — Copilot re-review not required for new commit."
+              else
+                echo "⏳ No Copilot COMMENTED review for HEAD ${HEAD_SHA} — holding gate."
+                echo "## Bot Review Closure Report" >> "$GITHUB_STEP_SUMMARY"
+                echo "⏳ **Pending Copilot review** — gate re-runs automatically when Copilot submits its review." >> "$GITHUB_STEP_SUMMARY"
+                exit 1
+              fi
+            fi
+          fi
+
+          MAX_RETRIES=1
+          RETRY_WAIT=15
+          if [ "${GITHUB_EVENT_NAME}" = "pull_request_review_comment" ]; then
+            MAX_RETRIES=7
+          fi
+
+          attempt=1
+          while true; do
+            echo "Checking bot comment dispositions (attempt ${attempt}/${MAX_RETRIES})..."
+
+            if ! ALL_COMMENTS=$(gh api \
+              "repos/${REPO}/pulls/${PR_NUMBER}/comments" \
+              --paginate \
+              -q '.'); then
+              echo "Failed to fetch PR comments from GitHub API." >&2
+              if [ "$attempt" -lt "$MAX_RETRIES" ]; then
+                echo "Retrying in ${RETRY_WAIT}s..." >&2
+                sleep "$RETRY_WAIT"
+                attempt=$((attempt + 1))
+                continue
+              fi
+              echo "Exhausted retries while fetching PR comments." >&2
+              exit 1
+            fi
+
+            _TMP_ALL=$(mktemp)
+            printf '%s' "$ALL_COMMENTS" > "$_TMP_ALL"
+            BOT_COMMENTS=$(python3 - "$_TMP_ALL" <<'PYEOF'
+          import json, sys
+
+          bot_logins = {"github-copilot[bot]", "copilot-pull-request-reviewer", "copilot-pull-request-reviewer[bot]", "openai-codex[bot]", "Copilot", "chatgpt-codex-connector[bot]", "chatgpt-codex-connector"}
+          data = json.load(open(sys.argv[1]))
+          bots = [
+              c for c in data
+              if c.get("user", {}).get("login", "") in bot_logins
+              and c.get("in_reply_to_id") is None
+          ]
+          json.dump(bots, sys.stdout)
+          PYEOF
+            )
+            rm -f "$_TMP_ALL"
+
+            TOTAL=$(echo "$BOT_COMMENTS" | python3 -c "import json,sys; print(len(json.load(sys.stdin)))")
+
+            if [ "$TOTAL" -eq 0 ]; then
+              RESULTS='{"resolved": [], "unresolved": []}'
+              RESOLVED_COUNT=0
+              UNRESOLVED_COUNT=0
+              CLOSURE_RATE="1.0"
+            else
+              _TMP_ALL2=$(mktemp)
+              printf '%s' "$ALL_COMMENTS" > "$_TMP_ALL2"
+              RESULTS=$(python3 - "$_TMP_ALL2" <<'PYEOF'
+          import json, re, sys
+
+          bot_logins = {"github-copilot[bot]", "copilot-pull-request-reviewer", "copilot-pull-request-reviewer[bot]", "openai-codex[bot]", "Copilot", "chatgpt-codex-connector[bot]", "chatgpt-codex-connector"}
+          disposition_re = re.compile(
+              r'^\s*/(implemented|deferred:|rejected:)', re.IGNORECASE | re.MULTILINE
+          )
+
+          data = json.load(open(sys.argv[1]))
+          replies: dict[int, list] = {}
+          for c in data:
+              parent = c.get("in_reply_to_id")
+              if parent:
+                  replies.setdefault(parent, []).append(c)
+
+          bot_comments = [
+              c for c in data
+              if c.get("user", {}).get("login", "") in bot_logins
+              and c.get("in_reply_to_id") is None
+          ]
+
+          resolved = []
+          unresolved = []
+
+          for bc in bot_comments:
+            cid = bc["id"]
+            body_preview = bc.get("body", "")[:120].replace("\n", " ")
+            path = bc.get("path", "?")
+            line = bc.get("line") or bc.get("original_line") or "?"
+            human_replies = [
+                r for r in replies.get(cid, [])
+                if r.get("user", {}).get("login", "") not in bot_logins
+            ]
+            disposed = any(
+                disposition_re.search(r.get("body", ""))
+                for r in human_replies
+            )
+            entry = {
+                "id": cid,
+                "path": path,
+                "line": line,
+                "preview": body_preview,
+                "disposed": disposed,
+            }
+            if disposed:
+                resolved.append(entry)
+            else:
+                unresolved.append(entry)
+
+          print(json.dumps({"resolved": resolved, "unresolved": unresolved}))
+          PYEOF
+              )
+              rm -f "$_TMP_ALL2"
+
+              RESOLVED_COUNT=$(echo "$RESULTS" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d['resolved']))")
+              UNRESOLVED_COUNT=$(echo "$RESULTS" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d['unresolved']))")
+              CLOSURE_RATE=$(python3 -c "print(round(${RESOLVED_COUNT}/${TOTAL}, 4))" 2>/dev/null || echo "0.0")
+            fi
+
+            if [ "$UNRESOLVED_COUNT" -eq 0 ]; then
+              break
+            fi
+
+            if [ "$attempt" -ge "$MAX_RETRIES" ]; then
+              break
+            fi
+
+            echo "Bot comment closure still unresolved; retrying in ${RETRY_WAIT}s for possible GitHub API propagation lag..."
+            sleep "$RETRY_WAIT"
+            attempt=$((attempt + 1))
+          done
+
+          echo "## Bot Review Closure Report" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**PR:** #${PR_NUMBER}" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Bot inline comments found: **${TOTAL}**" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "✅ No bot inline review comments on this PR." >> "$GITHUB_STEP_SUMMARY"
+            echo "closure_rate=1.0" >> "$GITHUB_OUTPUT"
+            echo "total=${TOTAL}" >> "$GITHUB_OUTPUT"
+            echo "resolved=0" >> "$GITHUB_OUTPUT"
+            echo "unresolved=0" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Resolved: **${RESOLVED_COUNT}** | Unresolved: **${UNRESOLVED_COUNT}** | Closure Rate: **${CLOSURE_RATE}**" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+
+          if [ "$UNRESOLVED_COUNT" -gt 0 ]; then
+            echo "### ❌ Unresolved Bot Comments" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Each must be replied to with a disposition keyword (see templates below)." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "| ID | File | Line | Preview |" >> "$GITHUB_STEP_SUMMARY"
+            echo "|----|------|------|---------|" >> "$GITHUB_STEP_SUMMARY"
+            _TMP_RESULTS=$(mktemp)
+            printf '%s' "$RESULTS" > "$_TMP_RESULTS"
+            python3 - "$_TMP_RESULTS" <<'PYEOF' >> "$GITHUB_STEP_SUMMARY"
+          import json, sys
+          d = json.load(open(sys.argv[1]))
+          for c in d["unresolved"]:
+              preview = c["preview"].replace("|", "\\|")
+              print(f"| {c['id']} | `{c['path']}` | {c['line']} | {preview} |")
+          PYEOF
+            rm -f "$_TMP_RESULTS"
+
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "### Quick Disposition Templates" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "Open the **Files changed** tab, find each bot comment, and reply with **one** of:" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo '/implemented' >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "> Suggestion was applied in this PR." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo '/deferred: <reason> (action-<id>)' >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "> Valid but out of scope — must reference an AW action ID." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo '/rejected: <reason>' >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            echo "> Not applicable or incorrect." >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "After replying, this gate reruns automatically. See [CI-GATE-RUNBOOK.md](${{ github.server_url }}/${{ github.repository }}/blob/staging/docs/CI-GATE-RUNBOOK.md#bot-comment-closure-rate-blocks-with-n-bot-comments-lack-disposition) for full guidance." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### ✅ All Bot Comments Resolved (${RESOLVED_COUNT}/${TOTAL})" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          echo "closure_rate=${CLOSURE_RATE}" >> "$GITHUB_OUTPUT"
+          echo "total=${TOTAL}" >> "$GITHUB_OUTPUT"
+          echo "resolved=${RESOLVED_COUNT}" >> "$GITHUB_OUTPUT"
+          echo "unresolved=${UNRESOLVED_COUNT}" >> "$GITHUB_OUTPUT"
+
+          if [ "$UNRESOLVED_COUNT" -gt 0 ]; then
+            echo ""
+            echo "⚠️  ${UNRESOLVED_COUNT} bot comment(s) lack disposition. Closure rate: ${CLOSURE_RATE}"
+            exit 1
+          fi
+
+          echo "✅ All bot comments resolved (${RESOLVED_COUNT}/${TOTAL}). Closure rate: ${CLOSURE_RATE}"
