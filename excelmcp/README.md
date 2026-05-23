@@ -9,23 +9,26 @@ for destructive calls, preventing accidental mutations.
 
 ---
 
-## Quick Start
+## Installation
 
-```powershell
-# Install the package from the public repo root
-pip install -e "./excelmcp"
+```bash
+pip install excelmcp
+```
 
-# Or install with dev dependencies
+Or with COM extras (Windows only, for live recalculation and PDF export):
+```bash
+pip install excelmcp[com]
+```
+
+### Running tests (for contributors)
+
+```bash
+# Clone the repo and install with dev dependencies
 pip install -e "./excelmcp[dev]"
-
-# Reproducible install using pinned versions (constraints only — avoids pywin32 on Linux)
-pip install -c excelmcp/requirements-lock.txt -e "./excelmcp[dev]"
 
 # Run tests
 pytest excelmcp/tests/ -m "not integration" -v --tb=short
 ```
-
-The lock file `excelmcp/requirements-lock.txt` pins exact runtime dependency versions for reproducible installs. The bundled sibling package `shared/` is installed automatically via the local file dependency declared in `excelmcp/pyproject.toml`.
 
 ### VS Code mcp.json Registration
 

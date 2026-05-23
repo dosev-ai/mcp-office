@@ -1,7 +1,22 @@
 [project]
-name = "excelmcp"
+name = "mcp-office-excel"
 version = "0.6.0"
 requires-python = ">=3.11"
+description = "Excel MCP stdio server — read and edit .xlsx files via the Model Context Protocol"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Delyan Dosev", email = "ddossev@gmail.com" }]
+keywords = ["mcp", "excel", "xlsx", "llm", "ai-tools", "office-automation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business :: Financial :: Spreadsheet",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
 dependencies = [
     "fastmcp>=3.0.0,<4",
     "openpyxl>=3.1.0",
@@ -10,6 +25,12 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-mock>=3.12", "ruff>=0.4", "pytest-socket>=0.7"]
 com = ["pywin32>=306"]  # Windows-only; required for integration COM tests (pytest -m integration)
+
+[project.urls]
+Homepage = "https://github.com/dosev-ai/mcp-office"
+Repository = "https://github.com/dosev-ai/mcp-office"
+"Bug Tracker" = "https://github.com/dosev-ai/mcp-office/issues"
+Changelog = "https://github.com/dosev-ai/mcp-office/blob/main/CHANGELOG.md"
 
 [project.scripts]
 excelmcp = "excelmcp.server:main"
@@ -23,7 +44,7 @@ packages = ["excelmcp", "mcpshared"]
 
 [tool.setuptools.package-dir]
 excelmcp = "src/excelmcp"
-mcpshared = "../shared/src/mcpshared"
+mcpshared = "src/mcpshared"
 
 [tool.pytest.ini_options]
 markers = [
@@ -44,7 +65,3 @@ extend-ignore = ["E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["E402"]
-
-# Keep the sibling shared package editable for uv-based local workflows too.
-[tool.uv.sources]
-mcpshared = { path = "../shared", editable = true }
