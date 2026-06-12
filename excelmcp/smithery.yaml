@@ -1,0 +1,36 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required: []
+    properties:
+      excelEnableWrite:
+        type: string
+        default: "false"
+        description: Enable write operations. Set to "true" to allow cell writes, sheet creation, formatting, etc.
+      excelAllowlistRoots:
+        type: string
+        default: ""
+        description: Comma-separated list of allowed file path roots (e.g. "C:\\Users\\me\\Documents,D:\\Projects")
+      excelMaxItems:
+        type: string
+        default: "50"
+        description: Maximum number of rows/items returned per call
+      excelMaxBodyChars:
+        type: string
+        default: "4000"
+        description: Maximum characters returned for cell content
+  commandFunction:
+    |-
+    (config) => ({
+      command: 'python',
+      args: ['-m', 'excelmcp.server'],
+      env: {
+        EXCEL_ENABLE_WRITE: config.excelEnableWrite || 'false',
+        EXCEL_ALLOWLIST_ROOTS: config.excelAllowlistRoots || '',
+        EXCEL_MAX_ITEMS: config.excelMaxItems || '50',
+        EXCEL_MAX_BODY_CHARS: config.excelMaxBodyChars || '4000'
+      }
+    })
