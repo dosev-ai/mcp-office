@@ -19,16 +19,16 @@ MCP Office is a suite of [Model Context Protocol](https://modelcontextprotocol.i
 
 ### ✅ Available now
 
-| Package | What it does | Install |
-|---|---|---|
-| [`excelmcp`](excelmcp/) | Read, write, style, validate, and export Excel workbooks via 60+ governed tools | `pip install -e ./excelmcp` |
+| Package | What it does | Install | Tools |
+|---|---|---|---|
+| [`excelmcp`](excelmcp/) | Read, write, style, validate, and export Excel workbooks | `pip install -e ./excelmcp` | 60+ |
+| [`pptmcp`](pptmcp/) | Build, edit, review, and export PowerPoint presentations. Output Contract framework for machine-verifiable slide specs | `pip install -e ./shared && pip install -e ./pptmcp` | 48 |
 
 ### 🚧 Coming next
 
 | Package | Status |
 |---|---|
 | `mailmcp` | In development — Outlook email, calendar, contacts, and MailRepo search |
-| `pptmcp` | Roadmap — PowerPoint slide generation, review, and export |
 | `wordmcp` | Roadmap — Word document creation and structured editing |
 
 New packages are added as they complete their proof cycle. See [ROADMAP.md](ROADMAP.md).
@@ -75,9 +75,9 @@ Your MCP client (Claude Desktop / VS Code Copilot / other)
         │  MCP stdio protocol
         ↓
   MCP Office servers (local Python processes)
-   ├─ excelmcp    — Excel automation
+   ├─ excelmcp    — Excel automation (live)
+   ├─ pptmcp      — PowerPoint automation (live)
    ├─ mailmcp     — Outlook + MailRepo (coming)
-   ├─ pptmcp      — PowerPoint (roadmap)
    └─ wordmcp     — Word (roadmap)
         │
         │  COM / openpyxl / python-docx

@@ -1,0 +1,66 @@
+[project]
+name = "mcp-office-powerpoint"
+version = "0.5.0"
+requires-python = ">=3.11"
+description = "PowerPoint MCP server — 48 tools with Output Contracts and machine-verifiable slide specs. Part of the mcp-office workflow suite."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Delyan Dosev", email = "ddossev@gmail.com" }]
+keywords = [
+    "mcp", "model-context-protocol", "microsoft-office", "office-automation",
+    "fastmcp", "python", "workflow", "automation", "ai", "claude",
+    "powerpoint", "pptx", "presentations",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = ["fastmcp>=3.1.1,<3.2", "python-pptx>=0.6.23", "Pillow>=10.0", "mcpshared"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-mock>=3.12", "ruff>=0.4", "pytest-socket>=0.7", "freezegun>=1.4"]
+com = ["pywin32>=305; sys_platform == 'win32'"]
+
+[project.urls]
+Homepage = "https://github.com/dosev-ai/mcp-office"
+Repository = "https://github.com/dosev-ai/mcp-office"
+"Bug Tracker" = "https://github.com/dosev-ai/mcp-office/issues"
+Changelog = "https://github.com/dosev-ai/mcp-office/blob/main/CHANGELOG.md"
+
+[project.scripts]
+pptmcp = "pptmcp.server:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: pure unit tests — no COM, no live server",
+    "smoke: FastMCP server wiring smoke tests",
+    "integration: real .pptx file I/O, no COM",
+    "com: integration tests requiring a live PowerPoint COM instance (Windows only)",
+    "enable_socket: allow socket use for FastMCP event loop (pytest-socket opt-in)",
+]
+testpaths = ["tests"]
+addopts = "--strict-markers --disable-socket"
+filterwarnings = [
+    # pywin32 finalizer fires RPC_E_DISCONNECTED (0x80010108) on Windows when
+    # com_error objects from unit tests are GC'd — not a real test failure.
+    "ignore::pytest.PytestUnraisableExceptionWarning",
+]
+python_files = ["test_*.py"]
+
+# H-005: declare local path so `uv` resolves mcpshared without a PyPI lookup.
+# pip users: pre-install with `pip install -e ./shared` (also done by CI).
+[tool.uv.sources]
+mcpshared = { path = "../shared", editable = true }
