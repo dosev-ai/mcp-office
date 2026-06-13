@@ -23,6 +23,7 @@ MCP Office is a suite of [Model Context Protocol](https://modelcontextprotocol.i
 |---|---|---|---|
 | [`excelmcp`](excelmcp/) | Read, write, style, validate, and export Excel workbooks | `pip install -e ./excelmcp` | 60+ |
 | [`pptmcp`](pptmcp/) | Build, edit, review, and export PowerPoint presentations. Output Contract framework for machine-verifiable slide specs | `pip install -e ./shared && pip install -e ./pptmcp` | 48 |
+| [`wordmcp`](wordmcp/) | Template assembly, tracked-changes support, and structural QA for Word documents | `pip install -e ./wordmcp` | 51 |
 
 ### 🚧 Coming next
 
