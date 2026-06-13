@@ -1,0 +1,26 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required: []
+    properties:
+      wordEnableWrite:
+        type: string
+        default: "false"
+        description: Enable write operations. Set to "true" to allow editing document content, styles, etc.
+      wordAllowlistRoots:
+        type: string
+        default: ""
+        description: Comma-separated list of allowed file path roots
+  commandFunction:
+    |-
+    (config) => ({
+      command: 'python',
+      args: ['-m', 'wordmcp.server'],
+      env: {
+        WORD_ENABLE_WRITE: config.wordEnableWrite || 'false',
+        WORD_ALLOWLIST_ROOTS: config.wordAllowlistRoots || ''
+      }
+    })

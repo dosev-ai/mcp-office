@@ -1,0 +1,56 @@
+[project]
+name = "mcp-office-word"
+version = "0.4.0"
+requires-python = ">=3.11"
+description = "Word MCP server — 51 tools for document assembly, tracked changes, and structural QA. Part of the mcp-office workflow suite."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Delyan Dosev", email = "ddossev@gmail.com" }]
+keywords = [
+    "mcp", "model-context-protocol", "microsoft-office", "office-automation",
+    "fastmcp", "python", "workflow", "automation", "ai", "claude",
+    "word", "docx", "document-processing",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Office/Business",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = ["fastmcp>=3.2.0,<4", "python-docx>=0.8.11"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-mock>=3.12", "ruff>=0.4", "pytest-socket>=0.7"]
+com = ["pywin32>=306; sys_platform == 'win32'"]
+
+[project.urls]
+Homepage = "https://github.com/dosev-ai/mcp-office"
+Repository = "https://github.com/dosev-ai/mcp-office"
+"Bug Tracker" = "https://github.com/dosev-ai/mcp-office/issues"
+Changelog = "https://github.com/dosev-ai/mcp-office/blob/main/CHANGELOG.md"
+
+[project.scripts]
+wordmcp = "wordmcp.server:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+markers = [
+    "unit: unit tests (no live Office required)",
+    "smoke: smoke tests",
+    "integration: requires live Word/Office (deselect with -m 'not integration')",
+    "security: marks a security test",
+    "com: requires live Word COM instance (Windows only)",
+]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+python_files = ["test_*.py"]

@@ -24,6 +24,8 @@ jobs:
         run: python -m build excelmcp/
       - name: Build pptmcp wheel and sdist
         run: python -m build pptmcp/
+      - name: Build wordmcp wheel and sdist
+        run: python -m build wordmcp/
       - name: Upload distribution artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -31,6 +33,7 @@ jobs:
           path: |
             excelmcp/dist/
             pptmcp/dist/
+            wordmcp/dist/
 
   publish-pypi:
     name: Publish to PyPI
