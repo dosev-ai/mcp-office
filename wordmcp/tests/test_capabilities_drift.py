@@ -64,8 +64,8 @@ def test_capabilities_drift() -> None:
     caps = capabilities()
 
     # Aggregate all announced tool names from the top-level list and com_tools.
-    # com_tools entries are already appended to caps["tools"] by server.py, but
-    # we union both defensively in case the structure changes.
+    # build_capabilities() separates COM tools under caps["com_tools"]["tools"];
+    # union both to get the full announced tool set.
     caps_all: set[str] = set(caps.get("tools", []))
     for name in caps.get("com_tools", {}).get("tools", []):
         caps_all.add(name)

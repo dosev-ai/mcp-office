@@ -24,9 +24,9 @@ def register(
         """Export document to a specified format.
 
         DEPRECATED: Use the `export` tool instead.
-          export(path, scope='pdf', output_path=..., confirm=True)   → replaces format='pdf'
-          export(path, scope='docx', output_path=..., confirm=True)  → replaces format='docx'
-          export(path, scope='txt', output_path=..., confirm=True)   → writes .txt file
+          export(path, scope='pdf', output_path=..., confirm=True)      → replaces format='pdf'
+          export(path, scope='html', output_path=..., confirm=True)     → replaces format='html'
+          export(path, scope='txt', output_path=..., confirm=True)      → writes .txt file
           export(path, scope='markdown', output_path=..., confirm=True) → writes .md file
 
         This alias is kept for backward compatibility and continues to function identically.

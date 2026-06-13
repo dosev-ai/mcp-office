@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import pytest
+from fastmcp.exceptions import ToolError
 
 
 def _call_tool(tool, *args, **kwargs):
@@ -55,7 +56,7 @@ def test_get_outline_bad_path_raises(tmp_path, monkeypatch):
     from wordmcp.document_docx import ValidationError
 
     monkeypatch.setenv("WORD_ALLOWLIST_ROOTS", str(tmp_path))
-    with pytest.raises((ValidationError, Exception)):
+    with pytest.raises(ValidationError):
         get_document_outline("/not/in/allowlist/file.docx")
 
 
@@ -134,7 +135,7 @@ def test_review_document_check_names_invalid_json_raises(review_docx):
     """T-COERCE-2: check_names with invalid JSON string raises ToolError."""
     from wordmcp import server as srv
 
-    with pytest.raises(Exception, match="invalid JSON string"):
+    with pytest.raises(ToolError, match="invalid JSON string"):
         _call_tool(
             srv.review_document,
             path=str(review_docx),

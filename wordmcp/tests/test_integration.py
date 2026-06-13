@@ -1,8 +1,9 @@
 """
-Integration tests for wordmcp — Sprint A.
+Integration tests for wordmcp.
 All tests use @pytest.mark.integration.
 All file I/O uses tmp_path pytest fixture.
 Imports ONLY from wordmcp.document_docx (no server.py).
+These tests use the python-docx backend; no live Word/COM required.
 """
 from __future__ import annotations
 
