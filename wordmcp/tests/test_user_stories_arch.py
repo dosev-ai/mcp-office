@@ -9,7 +9,7 @@ These 10 tests encode the acceptance criteria P1–P8 as verifiable assertions.
 BEFORE delivery some tests FAIL (baseline state).
 AFTER delivery ALL 10 tests MUST PASS.
 
-Run with: pytest word/tests/test_user_stories_arch.py -v
+Run with: pytest wordmcp/tests/test_user_stories_arch.py -v
 """
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ import pytest
 # Helpers
 # ---------------------------------------------------------------------------
 
-WORD_SRC = Path(__file__).parents[2] / "word" / "src"
+WORD_SRC = Path(__file__).parents[1] / "src"
 sys.path.insert(0, str(WORD_SRC))
 
 _handlers_com_path = WORD_SRC / "wordmcp" / "_server_handlers_com.py"

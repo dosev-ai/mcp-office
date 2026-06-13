@@ -13,10 +13,10 @@ Tests cover:
   B7  COM export gate: write gate fired before _word_app_context is entered
 
 Run (mock COM — no live Word):
-  pytest word/tests/test_integration_arch.py -v -m "not integration"
+  pytest wordmcp/tests/test_integration_arch.py -v -m "not integration and not com"
 
 Run (live Word — Windows only):
-  pytest word/tests/test_integration_arch.py -v -m integration
+  pytest wordmcp/tests/test_integration_arch.py -v -m integration
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ from docx import Document
 # ===========================================================================
 
 
-@pytest.mark.unit
+@pytest.mark.com
 def test_p3_export_document_pdf_calls_com_layer(com_env, patch_word_com):
     """P3-POS: export_document(format='pdf') with write env set reaches COM and returns ok.
 
@@ -56,7 +56,7 @@ def test_p3_export_document_pdf_calls_com_layer(com_env, patch_word_com):
     assert "output_path" in result
 
 
-@pytest.mark.unit
+@pytest.mark.com
 def test_p3_export_document_html_calls_com_layer(com_env, monkeypatch):
     """P3-POS: export_document(format='html') with write env and COM mock returns ok.
 
@@ -98,7 +98,7 @@ def test_p3_export_document_html_calls_com_layer(com_env, monkeypatch):
 # ===========================================================================
 
 
-@pytest.mark.unit
+@pytest.mark.com
 def test_p4_manage_tracked_changes_list_via_mock(com_env, patch_word_com):
     """P4-POS: manage_tracked_changes('list') returns dict with 'revisions' key."""
     from wordmcp.document_com import manage_tracked_changes
@@ -113,7 +113,7 @@ def test_p4_manage_tracked_changes_list_via_mock(com_env, patch_word_com):
     assert isinstance(result["revisions"], list)
 
 
-@pytest.mark.unit
+@pytest.mark.com
 def test_p4_manage_tracked_changes_accept_all_via_mock(com_env, patch_word_com):
     """P4-POS: manage_tracked_changes('accept_all') returns {'accepted': True}."""
     from wordmcp.document_com import manage_tracked_changes
@@ -128,7 +128,7 @@ def test_p4_manage_tracked_changes_accept_all_via_mock(com_env, patch_word_com):
     assert result.get("accepted") is True
 
 
-@pytest.mark.unit
+@pytest.mark.com
 def test_p4_manage_tracked_changes_reject_all_via_mock(com_env, patch_word_com):
     """P4-POS: manage_tracked_changes('reject_all') returns {'rejected': True}."""
     from wordmcp.document_com import manage_tracked_changes
@@ -143,7 +143,7 @@ def test_p4_manage_tracked_changes_reject_all_via_mock(com_env, patch_word_com):
     assert result.get("rejected") is True
 
 
-@pytest.mark.unit
+@pytest.mark.com
 def test_p4_manage_tracked_changes_accept_all_calls_revisions_accept(
     com_env, patch_word_com
 ):

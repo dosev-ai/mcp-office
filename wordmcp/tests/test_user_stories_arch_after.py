@@ -25,7 +25,7 @@ import pytest
 from fastmcp.exceptions import ToolError
 
 # Ensure word/src is on sys.path before any wordmcp imports.
-WORD_SRC = Path(__file__).parents[2] / "word" / "src"
+WORD_SRC = Path(__file__).parents[1] / "src"
 sys.path.insert(0, str(WORD_SRC))
 
 
