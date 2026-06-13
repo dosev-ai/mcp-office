@@ -21,7 +21,7 @@ jobs:
       - name: Install ruff
         run: pip install ruff
       - name: Ruff check
-        run: ruff check excelmcp/src shared/ --ignore E501
+        run: ruff check excelmcp/src pptmcp/src shared/ --ignore E501
 
   test:
     name: Tests
@@ -35,6 +35,21 @@ jobs:
         run: pip install -e "./excelmcp[dev]"
       - name: Run unit tests
         run: pytest excelmcp/tests/ -q --tb=short -m "not integration"
+
+  test-pptmcp:
+    name: Tests (pptmcp)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install shared + pptmcp
+        run: |
+          pip install -e "./shared"
+          pip install -e "./pptmcp[dev]"
+      - name: Run unit tests
+        run: pytest pptmcp/tests/ -q --tb=short -m "not integration and not com"
 
   startup-smoke:
     name: Startup smoke

@@ -18,7 +18,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "fastmcp>=3.0.0,<4",
+    "fastmcp>=3.2.0,<4",
     "openpyxl>=3.1.0",
 ]
 

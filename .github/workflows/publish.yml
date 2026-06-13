@@ -18,13 +18,19 @@ jobs:
           python-version: "3.12"
       - name: Install build
         run: pip install build
-      - name: Build wheel and sdist
+      - name: Install shared (pptmcp dep)
+        run: pip install -e "./shared"
+      - name: Build excelmcp wheel and sdist
         run: python -m build excelmcp/
+      - name: Build pptmcp wheel and sdist
+        run: python -m build pptmcp/
       - name: Upload distribution artifacts
         uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: excelmcp/dist/
+          path: |
+            excelmcp/dist/
+            pptmcp/dist/
 
   publish-pypi:
     name: Publish to PyPI
