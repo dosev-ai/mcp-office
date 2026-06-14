@@ -1,4 +1,10 @@
 # Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+#
+# IMPORTANT: This server runs locally on the USER's machine (Windows + Microsoft Excel required).
+# It cannot run on Smithery's hosted Linux infrastructure.
+# Set target: local so Smithery routes to the local execution path.
+
+target: local
 
 startCommand:
   type: stdio
@@ -9,11 +15,11 @@ startCommand:
       excelEnableWrite:
         type: string
         default: "false"
-        description: Enable write operations. Set to "true" to allow cell writes, sheet creation, formatting, etc.
+        description: "Enable write operations. Set to 'true' to allow cell writes, sheet creation, formatting, etc. Requires Windows + Microsoft Excel."
       excelAllowlistRoots:
         type: string
         default: ""
-        description: Comma-separated list of allowed file path roots (e.g. "C:\\Users\\me\\Documents,D:\\Projects")
+        description: "Comma-separated list of allowed file path roots (e.g. 'C:\\Users\\me\\Documents,D:\\Projects'). Access outside these roots is blocked."
       excelMaxItems:
         type: string
         default: "50"
