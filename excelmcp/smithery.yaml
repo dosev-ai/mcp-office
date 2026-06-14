@@ -1,7 +1,9 @@
 # Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
 #
-# IMPORTANT: This server runs locally on the USER's machine (Windows + Microsoft Excel required).
-# It cannot run on Smithery's hosted Linux infrastructure.
+# IMPORTANT: This server runs locally on the USER's machine (Windows required).
+# File-based tools (openpyxl) run without Excel installed.
+# COM-backed tools (PDF export, pivot tables, recalculation) additionally require Microsoft Excel.
+# This server cannot run on Smithery's hosted Linux infrastructure.
 # Set target: local so Smithery routes to the local execution path.
 
 target: local
@@ -15,7 +17,7 @@ startCommand:
       excelEnableWrite:
         type: string
         default: "false"
-        description: "Enable write operations. Set to 'true' to allow cell writes, sheet creation, formatting, etc. Requires Windows + Microsoft Excel."
+        description: "Enable write operations. Set to 'true' to allow cell writes, sheet creation, and formatting. File-based operations run on Windows without Excel installed. COM tools (PDF export, pivot tables) additionally require Microsoft Excel and EXCEL_ENABLE_COM=true."
       excelAllowlistRoots:
         type: string
         default: ""

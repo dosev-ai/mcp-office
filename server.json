@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/registry/refs/heads/main/schema/server.json",
   "name": "MCP Office",
-  "description": "Local-first MCP servers for Microsoft Office (Excel, PowerPoint, Word). Governed tool calls over Excel, PowerPoint, and Word via Python stdio. Requires Windows + Microsoft Office. No hosted tier — runs on your machine.",
+  "description": "Local-first MCP servers for Microsoft Office (Excel, PowerPoint, Word). Governed tool calls over Excel, PowerPoint, and Word via Python stdio. Requires Windows. COM-backed tools (PDF export, live recalculation, tracked changes) additionally require Microsoft Office. No hosted tier — runs on your machine.",
   "homepage": "https://github.com/dosev-ai/mcp-office",
   "license": "MIT",
   "runtime": "python",
@@ -31,6 +31,11 @@
           "name": "EXCEL_ENABLE_WRITE",
           "description": "Set to 'true' to enable write operations",
           "default": "false"
+        },
+        {
+          "name": "EXCEL_ENABLE_COM",
+          "description": "Set to 'true' to activate COM-backed tools: recalculate_workbook, export_as_pdf, hydrate_template, pivot_table, and evaluate_formula(live=True). Windows-only — requires pywin32 and Microsoft Excel.",
+          "default": "false"
         }
       ],
       "platforms": ["windows"]
@@ -50,6 +55,11 @@
           "name": "PPT_ENABLE_WRITE",
           "description": "Set to 'true' to enable write operations",
           "default": "false"
+        },
+        {
+          "name": "PPT_ENABLE_COM",
+          "description": "Set to 'true' to activate COM-backed tools: export_slide, export_deck, run_slide_show, recalculate_charts, and export_changed_slides_only. Windows-only — requires pywin32 and Microsoft PowerPoint.",
+          "default": "false"
         }
       ],
       "platforms": ["windows"]
@@ -68,6 +78,11 @@
         {
           "name": "WORD_ENABLE_WRITE",
           "description": "Set to 'true' to enable write operations",
+          "default": "false"
+        },
+        {
+          "name": "WORD_ENABLE_COM",
+          "description": "Set to 'true' to activate COM-backed tools: manage_tracked_changes and export_document (PDF/HTML). Windows-only — requires pywin32 and Microsoft Word.",
           "default": "false"
         }
       ],
