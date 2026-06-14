@@ -1,7 +1,14 @@
 # MCP client configuration template
 # Copy this to your MCP client config directory and fill in your paths.
 # For Claude Desktop: %APPDATA%\Claude\claude_desktop_config.json
-# For VS Code Copilot: .vscode/mcp.json in your workspace
+# For VS Code Copilot: use the "servers" root key instead — this file uses Claude Desktop format only.
+#
+# Replace ALL occurrences of:
+#   C:\\path\\to\\mcp-office  → absolute path where you cloned this repo
+#   C:\\path\\to\\your\\files → directory where your Office files live
+#
+# Only include servers for packages you have installed.
+# Restart your MCP client after saving.
 
 {
   "mcpServers": {
@@ -9,9 +16,24 @@
       "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
       "args": ["-m", "excelmcp.server"],
       "env": {
-        "PYTHONPATH": "C:\\path\\to\\mcp-office\\excelmcp\\src",
         "EXCEL_ALLOWLIST_ROOTS": "C:\\path\\to\\your\\files",
         "EXCEL_ENABLE_WRITE": "true"
+      }
+    },
+    "powerpoint-pptmcp": {
+      "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "pptmcp.server"],
+      "env": {
+        "PPT_ALLOWLIST_ROOTS": "C:\\path\\to\\your\\files",
+        "PPT_ENABLE_WRITE": "true"
+      }
+    },
+    "word-wordmcp": {
+      "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "wordmcp.server"],
+      "env": {
+        "WORD_ALLOWLIST_ROOTS": "C:\\path\\to\\your\\files",
+        "WORD_ENABLE_WRITE": "true"
       }
     }
   }

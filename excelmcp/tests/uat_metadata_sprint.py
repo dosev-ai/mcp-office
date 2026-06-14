@@ -25,7 +25,7 @@ import openpyxl
 # ---------------------------------------------------------------------------
 # Paths & configuration
 # ---------------------------------------------------------------------------
-_REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent   # msoffice-mcps/
+_REPO_ROOT = pathlib.Path(__file__).resolve().parent.parent.parent   # mcp-office/
 _EXCEL_SRC  = pathlib.Path(__file__).resolve().parent.parent / "src"  # excel/src
 PYTHONPATH  = os.environ.get("EXCELMCP_PYTHONPATH", str(_EXCEL_SRC))
 SERVER_CMD  = [sys.executable, "-m", "excelmcp.server"]
