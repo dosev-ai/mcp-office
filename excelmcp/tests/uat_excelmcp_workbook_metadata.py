@@ -1,7 +1,7 @@
 """UAT for workbook_metadata tool and metadata resource.
 
 Run:
-    c:/tmp/github/msoffice-mcps/.venv/Scripts/python.exe excel/tests/uat_excelmcp_workbook_metadata.py
+    python excelmcp/tests/uat_excelmcp_workbook_metadata.py
 """
 from __future__ import annotations
 

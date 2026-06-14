@@ -384,7 +384,7 @@ def test_prompt_body_contains_all_six_steps():
 
 
 # ---------------------------------------------------------------------------
-# Regression: ToolError hang fix (wrapper action-1780754351735)
+# Regression: ToolError hang fix
 # ---------------------------------------------------------------------------
 
 class TestToolErrorHangFix:
@@ -454,7 +454,7 @@ class TestToolErrorHangFix:
 
 
 
-# copy_slide clear_content (wrapper action-1780909504414)
+# copy_slide clear_content regression
 def _cs_pptx(tmp_path):
     from pptx import Presentation as _P; p = _P()
     s = p.slides.add_slide(p.slide_layouts[0])
