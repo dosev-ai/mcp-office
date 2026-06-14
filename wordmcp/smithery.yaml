@@ -1,4 +1,10 @@
 # Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+#
+# IMPORTANT: This server runs locally on the USER's machine (Windows + Microsoft Word required).
+# It cannot run on Smithery's hosted Linux infrastructure.
+# Set target: local so Smithery routes to the local execution path.
+
+target: local
 
 startCommand:
   type: stdio
@@ -9,11 +15,11 @@ startCommand:
       wordEnableWrite:
         type: string
         default: "false"
-        description: Enable write operations. Set to "true" to allow editing document content, styles, etc.
+        description: "Enable write operations. Set to 'true' to allow editing document content, styles, tracked changes, etc. Requires Windows + Microsoft Word."
       wordAllowlistRoots:
         type: string
         default: ""
-        description: Comma-separated list of allowed file path roots
+        description: "Comma-separated list of allowed file path roots. Access outside these roots is blocked."
   commandFunction:
     |-
     (config) => ({
