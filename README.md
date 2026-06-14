@@ -4,6 +4,8 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![CI](https://github.com/dosev-ai/mcp-office/actions/workflows/ci.yml/badge.svg)](https://github.com/dosev-ai/mcp-office/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/mcp-office-excel.svg)](https://pypi.org/project/mcp-office-excel/)
 [![UAT](https://img.shields.io/badge/UAT-E2E%20validated%20on%20Windows%2011-brightgreen.svg)](CHANGELOG.md)
 
 ---
@@ -47,6 +49,8 @@ New packages are added as they complete their proof cycle. See [ROADMAP.md](ROAD
 - Microsoft Office (Excel / PowerPoint / Word) — required for COM-backed tools (styling, PDF export, tracked-changes)
 
 ### Install
+
+> **PyPI note:** `excelmcp` on PyPI is an unrelated third-party package. Do **not** `pip install excelmcp` — that ships you a stranger's code. The published suite packages are `mcp-office-excel` (PyPI) and source-editable installs below. `pip install excelmcp` is never the right command for this project.
 
 ```bash
 # Clone the repo
