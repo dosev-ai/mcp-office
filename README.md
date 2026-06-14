@@ -4,6 +4,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![UAT](https://img.shields.io/badge/UAT-E2E%20validated%20on%20Windows%2011-brightgreen.svg)](CHANGELOG.md)
 
 ---
 

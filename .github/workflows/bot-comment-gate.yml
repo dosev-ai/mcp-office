@@ -1,18 +1,10 @@
 name: Bot Comment Gate (consolidated)
 
-# AI GENERATED CONTEXT
-# Current contract (action-1777360894757):
+# Bot comment gate contract:
 # - `Bot Comment Closure Rate` is the ONLY authoritative required gate.
-# - `review-threads-gate` compatibility job has been removed; branch protection
-#   has been updated to remove that required check.
 # - GitHub thread resolution is NOT part of the merge policy for the bot-only
-#   review path; `/implemented`, `/deferred: <reason> (action-<id>)`, and
-#   `/rejected: <reason>` replies are the required completion signal.
-#
-# Historical note:
-# - the review-threads-gate compatibility job was removed in action-1777360894757.
-# - the old auto-resolve helper was removed because thread resolution is no
-#   longer part of the authoritative merge contract.
+#   review path; `/implemented`, `/deferred: <reason>`, and `/rejected: <reason>`
+#   replies are the required completion signal.
 
 on:
   pull_request:
