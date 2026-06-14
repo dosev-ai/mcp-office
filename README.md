@@ -30,41 +30,104 @@ MCP Office is a suite of [Model Context Protocol](https://modelcontextprotocol.i
 | Package | Status |
 |---|---|
 | `mailmcp` | In development — Outlook email, calendar, contacts, and MailRepo search |
-| `wordmcp` | Roadmap — Word document creation and structured editing |
 
 New packages are added as they complete their proof cycle. See [ROADMAP.md](ROADMAP.md).
 
 ---
 
-## Quick start (excelmcp)
+## Quick start
+
+### Prerequisites
+
+- Windows 10 or 11
+- Python 3.11 or later (`python --version`)
+- Git (`git --version`)
+- [Claude Desktop](https://claude.ai/download) or VS Code with GitHub Copilot
+- Microsoft Office (Excel / PowerPoint / Word) — required for COM-backed tools (styling, PDF export, tracked-changes)
+
+### Install
 
 ```bash
-# 1. Clone
+# Clone the repo
 git clone https://github.com/dosev-ai/mcp-office.git
 cd mcp-office
 
-# 2. Create a virtual environment
+# Create one shared venv for all packages
 python -m venv .venv
-.venv\Scripts\activate  # Windows
+.venv\Scripts\activate
 
-# 3. Install excelmcp
+# Install whichever packages you want (each is independent)
 pip install -e ./excelmcp
+pip install -e ./wordmcp
 
-# 4. Configure your MCP client (see mcp.json.template)
+# pptmcp depends on the shared library — install both
+pip install -e ./shared && pip install -e ./pptmcp
 ```
 
-Then copy `mcp.json.template` to your MCP client config directory and fill in your paths.
+### Configure Claude Desktop
 
-Full walkthrough: [excelmcp/README.md](excelmcp/README.md)
+Open `%APPDATA%\Claude\claude_desktop_config.json` (create it if it doesn't exist) and add the servers you installed:
+
+```json
+{
+  "mcpServers": {
+    "excel-excelmcp": {
+      "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "excelmcp.server"],
+      "env": {
+        "EXCEL_ALLOWED_DIRS": "C:\\path\\to\\your\\files",
+        "EXCEL_ENABLE_WRITE": "true"
+      }
+    },
+    "powerpoint-pptmcp": {
+      "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "pptmcp.server"],
+      "env": {
+        "PPT_ALLOWLIST_ROOTS": "C:\\path\\to\\your\\files",
+        "PPT_ENABLE_WRITE": "true"
+      }
+    },
+    "word-wordmcp": {
+      "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "wordmcp.server"],
+      "env": {
+        "WORD_ALLOWLIST_ROOTS": "C:\\path\\to\\your\\files",
+        "WORD_ENABLE_WRITE": "true"
+      }
+    }
+  }
+}
+```
+
+Replace `C:\\path\\to\\mcp-office` with the absolute path where you cloned the repo, and `C:\\path\\to\\your\\files` with the directory where your Office files live. Restart Claude Desktop after saving.
+
+### Verify
+
+In Claude Desktop, send:
+
+```
+Call capabilities() on excel-excelmcp
+Call capabilities() on powerpoint-pptmcp
+Call capabilities() on word-wordmcp
+```
+
+Each should return a tool list (60+ for Excel, 48 for PowerPoint, 51 for Word). If a server is missing, check the `command` path points to your `.venv` Python executable.
+
+Full per-package guides: [excelmcp/README.md](excelmcp/README.md) · [pptmcp/README.md](pptmcp/README.md) · [wordmcp/README.md](wordmcp/README.md)
+
+Detailed step-by-step: [docs/quickstart.md](docs/quickstart.md)
 
 ---
 
 ## Requirements
 
-- Windows 10/11
-- Python 3.11+
-- Microsoft Office (for COM-dependent tools: styling, PDF export, live workbook operations)
-- An MCP-compatible client: [Claude Desktop](https://claude.ai/download), [VS Code with Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot)
+| Requirement | Notes |
+|---|---|
+| Windows 10 or 11 | COM automation requires Windows |
+| Python 3.11+ | `python --version` to confirm |
+| Git | For cloning the repo |
+| Microsoft Office | Required for COM-dependent tools (styling, PDF export, tracked-changes). Read-only docx/xlsx/pptx tools work without Office. |
+| MCP client | [Claude Desktop](https://claude.ai/download) **or** [VS Code with Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot) |
 
 ---
 
@@ -78,8 +141,8 @@ Your MCP client (Claude Desktop / VS Code Copilot / other)
   MCP Office servers (local Python processes)
    ├─ excelmcp    — Excel automation (live)
    ├─ pptmcp      — PowerPoint automation (live)
-   ├─ mailmcp     — Outlook + MailRepo (coming)
-   └─ wordmcp     — Word (roadmap)
+   ├─ wordmcp     — Word automation (live)
+   └─ mailmcp     — Outlook + MailRepo (coming)
         │
         │  COM / openpyxl / python-docx
         ↓
@@ -94,7 +157,7 @@ Each server is a standalone `stdio` MCP server. No network calls. No cloud depen
 
 This project is in active development. The best way to contribute right now:
 
-1. **Try excelmcp** and open a [First Run Report](https://github.com/dosev-ai/mcp-office/issues/new?template=first_run_report.yml)
+1. **Try any package** (excelmcp, pptmcp, wordmcp) and open a [First Run Report](https://github.com/dosev-ai/mcp-office/issues/new?template=first_run_report.yml)
 2. **Report bugs** via [GitHub Issues](https://github.com/dosev-ai/mcp-office/issues/new?template=bug_report.yml)
 3. **Ask questions or share what you built** in [GitHub Discussions](https://github.com/dosev-ai/mcp-office/discussions)
 
