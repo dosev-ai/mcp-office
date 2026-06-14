@@ -1,4 +1,12 @@
 # Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+#
+# IMPORTANT: This server runs locally on the USER's machine (Windows required).
+# File-based tools (python-docx) run without Word installed.
+# COM-backed tools (tracked changes, PDF/HTML export) additionally require Microsoft Word.
+# This server cannot run on Smithery's hosted Linux infrastructure.
+# Set target: local so Smithery routes to the local execution path.
+
+target: local
 
 startCommand:
   type: stdio
@@ -9,11 +17,11 @@ startCommand:
       wordEnableWrite:
         type: string
         default: "false"
-        description: Enable write operations. Set to "true" to allow editing document content, styles, etc.
+        description: "Enable write operations. Set to 'true' to allow editing document content and styles. File-based operations run on Windows without Word installed. COM tools (tracked changes, PDF/HTML export) additionally require Microsoft Word and WORD_ENABLE_COM=true."
       wordAllowlistRoots:
         type: string
         default: ""
-        description: Comma-separated list of allowed file path roots
+        description: "Comma-separated list of allowed file path roots. Access outside these roots is blocked."
   commandFunction:
     |-
     (config) => ({
