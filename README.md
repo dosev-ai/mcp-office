@@ -145,7 +145,7 @@ Your MCP client (Claude Desktop / VS Code Copilot / other)
    ├─ wordmcp     — Word automation (live)
    └─ mailmcp     — Outlook + MailRepo (coming)
         │
-        │  COM / openpyxl / python-docx
+        │  COM / openpyxl / python-pptx / python-docx
         ↓
   Microsoft Office (local installation)
 ```

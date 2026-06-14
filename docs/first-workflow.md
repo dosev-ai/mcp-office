@@ -10,7 +10,7 @@ This is the full end-to-end path — real commands, real expected output. Before
 
 - excelmcp installed and configured in your MCP client
 - `EXCEL_ENABLE_WRITE=true` in your MCP config
-- A folder in your `EXCEL_ALLOWED_DIRS` — for this walkthrough we’ll call it your allowed folder
+- A folder in your `EXCEL_ALLOWLIST_ROOTS` — for this walkthrough we’ll call it your allowed folder
 - Microsoft Excel installed (required for `apply_style` and `export_as_pdf`)
 
 Create a blank workbook called `budget.xlsx` in your allowed folder before starting.
@@ -38,7 +38,7 @@ sheet Sheet1, starting at cell A1, confirm=True:
 ```
 
 Two things are enforced automatically:
-- The file path must be inside `EXCEL_ALLOWED_DIRS`. Anything outside is rejected.
+- The file path must be inside `EXCEL_ALLOWLIST_ROOTS`. Anything outside is rejected.
 - `confirm=True` is required. Without it, the write is refused. This is the gate that keeps automation from running away from you.
 - Any cell value starting with `=`, `+`, `-`, or `@` is rejected as a potential formula injection.
 
