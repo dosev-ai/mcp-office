@@ -75,7 +75,7 @@ Open `%APPDATA%\Claude\claude_desktop_config.json` (create it if it doesn't exis
       "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
       "args": ["-m", "excelmcp.server"],
       "env": {
-        "EXCEL_ALLOWED_DIRS": "C:\\path\\to\\your\\files",
+        "EXCEL_ALLOWLIST_ROOTS": "C:\\path\\to\\your\\files",
         "EXCEL_ENABLE_WRITE": "true"
       }
     },

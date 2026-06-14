@@ -40,7 +40,7 @@ Open `%APPDATA%\Claude\claude_desktop_config.json` and add the `excel-excelmcp` 
       "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
       "args": ["-m", "excelmcp.server"],
       "env": {
-        "EXCEL_ALLOWED_DIRS": "C:\\path\\to\\your\\files",
+        "EXCEL_ALLOWLIST_ROOTS": "C:\\path\\to\\your\\files",
         "EXCEL_ENABLE_WRITE": "true"
       }
     }
@@ -66,7 +66,7 @@ Create or edit `.vscode/mcp.json` in your workspace:
       "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
       "args": ["-m", "excelmcp.server"],
       "env": {
-        "EXCEL_ALLOWED_DIRS": "C:\\path\\to\\your\\files",
+        "EXCEL_ALLOWLIST_ROOTS": "C:\\path\\to\\your\\files",
         "EXCEL_ENABLE_WRITE": "true"
       }
     }
@@ -101,7 +101,7 @@ python -m venv .venv
 pip install -e ./excelmcp
 
 # Set required environment variables
-set EXCEL_ALLOWED_DIRS=C:\path\to\your\files
+set EXCEL_ALLOWLIST_ROOTS=C:\path\to\your\files
 set EXCEL_ENABLE_WRITE=true
 
 # Run the server (stdio mode)
@@ -122,7 +122,7 @@ You should receive a `result` response within a few seconds.
 
 | Variable | Required | Description |
 |---|---|---|
-| `EXCEL_ALLOWED_DIRS` | Yes | Semicolon-separated list of directories excelmcp can access. Files outside this list are rejected. |
+| `EXCEL_ALLOWLIST_ROOTS` | Yes | Semicolon-separated list of directories excelmcp can access. Files outside this list are rejected. |
 | `EXCEL_ENABLE_WRITE` | No | Set to `true` to enable write operations. Default: read-only. |
 | `EXCEL_MAX_RANGE_CELLS` | No | Maximum cells per write operation. Default: 10000. |
 | `EXCEL_SESSION_TIMEOUT` | No | COM session timeout in seconds. Default: 30. |
@@ -131,8 +131,8 @@ You should receive a `result` response within a few seconds.
 
 ## Troubleshooting
 
-**`EXCEL_ALLOWED_DIRS` error**
-The file you’re trying to access is outside the allowed directories. Add its parent folder to `EXCEL_ALLOWED_DIRS` in your MCP config.
+**`EXCEL_ALLOWLIST_ROOTS` error**
+The file you’re trying to access is outside the allowed directories. Add its parent folder to `EXCEL_ALLOWLIST_ROOTS` in your MCP config.
 
 **`EXCEL_ENABLE_WRITE` error**
 Write operations are disabled by default. Add `"EXCEL_ENABLE_WRITE": "true"` to the `env` block in your MCP config and restart your client.
