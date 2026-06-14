@@ -1,7 +1,7 @@
 # MCP client configuration template
 # Copy this to your MCP client config directory and fill in your paths.
 # For Claude Desktop: %APPDATA%\Claude\claude_desktop_config.json
-# For VS Code Copilot: .vscode/mcp.json in your workspace
+# For VS Code Copilot: use the "servers" root key instead — this file uses Claude Desktop format only.
 #
 # Replace ALL occurrences of:
 #   C:\\path\\to\\mcp-office  → absolute path where you cloned this repo
