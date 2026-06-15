@@ -1,9 +1,15 @@
+<!-- mcp-name: io.github.dosev-ai/mcp-office-excel -->
+<!-- mcp-name: io.github.dosev-ai/mcp-office-powerpoint -->
+<!-- mcp-name: io.github.dosev-ai/mcp-office-word -->
+
 # MCP Office
 
 > Local-first, governed MCP servers for Microsoft Office — built for developers who want to treat Office files the way they treat code.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://python.org)
+[![CI](https://github.com/dosev-ai/mcp-office/actions/workflows/ci.yml/badge.svg)](https://github.com/dosev-ai/mcp-office/actions/workflows/ci.yml)
+[![PyPI](https://img.shields.io/pypi/v/mcp-office.svg)](https://pypi.org/project/mcp-office/)
 [![UAT](https://img.shields.io/badge/UAT-E2E%20validated%20on%20Windows%2011-brightgreen.svg)](CHANGELOG.md)
 
 ---
@@ -22,9 +28,9 @@ MCP Office is a suite of [Model Context Protocol](https://modelcontextprotocol.i
 
 | Package | What it does | Install | Tools |
 |---|---|---|---|
-| [`excelmcp`](excelmcp/) | Read, write, style, validate, and export Excel workbooks | `pip install -e ./excelmcp` | 60+ |
-| [`pptmcp`](pptmcp/) | Build, edit, review, and export PowerPoint presentations. Output Contract framework for machine-verifiable slide specs | `pip install -e ./shared && pip install -e ./pptmcp` | 48 |
-| [`wordmcp`](wordmcp/) | Template assembly, tracked-changes support, and structural QA for Word documents | `pip install -e ./wordmcp` | 51 |
+| [`excelmcp`](excelmcp/) | Read, write, style, validate, and export Excel workbooks | `pip install mcp-office` | 65 |
+| [`pptmcp`](pptmcp/) | Build, edit, review, and export PowerPoint presentations. Output Contract framework for machine-verifiable slide specs | `pip install mcp-office` | 46 |
+| [`wordmcp`](wordmcp/) | Template assembly, tracked-changes support, and structural QA for Word documents | `pip install mcp-office` | 50 |
 
 ### 🚧 Coming next
 
@@ -42,26 +48,26 @@ New packages are added as they complete their proof cycle. See [ROADMAP.md](ROAD
 
 - Windows 10 or 11
 - Python 3.11 or later (`python --version`)
-- Git (`git --version`)
 - [Claude Desktop](https://claude.ai/download) or VS Code with GitHub Copilot
 - Microsoft Office (Excel / PowerPoint / Word) — required for COM-backed tools (styling, PDF export, tracked-changes)
 
 ### Install
 
+> **PyPI note:** `excelmcp` on PyPI is an unrelated third-party package. Do **not** `pip install excelmcp` — that ships you a stranger's code. The published suite package is `mcp-office`.
+
 ```bash
-# Clone the repo
+pip install mcp-office
+```
+
+Or clone and install from source (for development / COM extras):
+
+```bash
 git clone https://github.com/dosev-ai/mcp-office.git
 cd mcp-office
-
-# Create one shared venv for all packages
 python -m venv .venv
 .venv\Scripts\activate
-
-# Install whichever packages you want (each is independent)
 pip install -e ./excelmcp
 pip install -e ./wordmcp
-
-# pptmcp depends on the shared library — install both
 pip install -e ./shared && pip install -e ./pptmcp
 ```
 
@@ -73,7 +79,7 @@ Open `%APPDATA%\Claude\claude_desktop_config.json` (create it if it doesn't exis
 {
   "mcpServers": {
     "excel-excelmcp": {
-      "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
+      "command": "python",
       "args": ["-m", "excelmcp.server"],
       "env": {
         "EXCEL_ALLOWLIST_ROOTS": "C:\\path\\to\\your\\files",
@@ -81,7 +87,7 @@ Open `%APPDATA%\Claude\claude_desktop_config.json` (create it if it doesn't exis
       }
     },
     "powerpoint-pptmcp": {
-      "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
+      "command": "python",
       "args": ["-m", "pptmcp.server"],
       "env": {
         "PPT_ALLOWLIST_ROOTS": "C:\\path\\to\\your\\files",
@@ -89,7 +95,7 @@ Open `%APPDATA%\Claude\claude_desktop_config.json` (create it if it doesn't exis
       }
     },
     "word-wordmcp": {
-      "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
+      "command": "python",
       "args": ["-m", "wordmcp.server"],
       "env": {
         "WORD_ALLOWLIST_ROOTS": "C:\\path\\to\\your\\files",
@@ -100,7 +106,7 @@ Open `%APPDATA%\Claude\claude_desktop_config.json` (create it if it doesn't exis
 }
 ```
 
-Replace `C:\\path\\to\\mcp-office` with the absolute path where you cloned the repo, and `C:\\path\\to\\your\\files` with the directory where your Office files live. Restart Claude Desktop after saving.
+Replace `C:\\path\\to\\your\\files` with the directory where your Office files live. Restart Claude Desktop after saving.
 
 ### Verify
 
@@ -112,7 +118,7 @@ Call capabilities() on powerpoint-pptmcp
 Call capabilities() on word-wordmcp
 ```
 
-Each should return a tool list (60+ for Excel, 48 for PowerPoint, 51 for Word). If a server is missing, check the `command` path points to your `.venv` Python executable.
+Each should return a tool list (65 for Excel, 46 for PowerPoint, 50 for Word). If a server is missing, check that `python` resolves to the venv where you installed `mcp-office`.
 
 Full per-package guides: [excelmcp/README.md](excelmcp/README.md) · [pptmcp/README.md](pptmcp/README.md) · [wordmcp/README.md](wordmcp/README.md)
 
@@ -126,7 +132,6 @@ Detailed step-by-step: [docs/quickstart.md](docs/quickstart.md)
 |---|---|
 | Windows 10 or 11 | COM automation requires Windows |
 | Python 3.11+ | `python --version` to confirm |
-| Git | For cloning the repo |
 | Microsoft Office | Required for COM-dependent tools (styling, PDF export, tracked-changes). Read-only docx/xlsx/pptx tools work without Office. |
 | MCP client | [Claude Desktop](https://claude.ai/download) **or** [VS Code with Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot) |
 

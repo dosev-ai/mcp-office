@@ -1,0 +1,93 @@
+{
+  "$schema": "https://raw.githubusercontent.com/modelcontextprotocol/registry/refs/heads/main/schema/server.json",
+  "name": "MCP Office",
+  "description": "Local-first MCP servers for Microsoft Office (Excel, PowerPoint, Word). Governed tool calls over Excel, PowerPoint, and Word via Python stdio. Requires Windows. COM-backed tools (PDF export, live recalculation, tracked changes) additionally require Microsoft Office. No hosted tier — runs on your machine.",
+  "homepage": "https://github.com/dosev-ai/mcp-office",
+  "license": "MIT",
+  "runtime": "python",
+  "categories": ["productivity", "office", "automation"],
+  "tags": [
+    "excel",
+    "powerpoint",
+    "word",
+    "microsoft-office",
+    "automation",
+    "local-first",
+    "windows",
+    "mcp"
+  ],
+  "installations": {
+    "excelmcp": {
+      "type": "pip",
+      "command": "pip install mcp-office-excel",
+      "description": "Excel MCP server — 60+ tools for reading, writing, formatting, and exporting Excel workbooks",
+      "environmentVariables": [
+        {
+          "name": "EXCEL_ALLOWLIST_ROOTS",
+          "description": "Comma-separated directory roots allowed for file access (required)",
+          "required": true
+        },
+        {
+          "name": "EXCEL_ENABLE_WRITE",
+          "description": "Set to 'true' to enable write operations",
+          "default": "false"
+        },
+        {
+          "name": "EXCEL_ENABLE_COM",
+          "description": "Set to 'true' to activate COM-backed tools: recalculate_workbook, export_as_pdf, hydrate_template, pivot_table, and evaluate_formula(live=True). Windows-only — requires pywin32 and Microsoft Excel.",
+          "default": "false"
+        }
+      ],
+      "platforms": ["windows"]
+    },
+    "pptmcp": {
+      "type": "git",
+      "url": "https://github.com/dosev-ai/mcp-office",
+      "command": "pip install -e ./shared && pip install -e ./pptmcp",
+      "description": "PowerPoint MCP server — 48 tools for building, editing, reviewing, and exporting presentations",
+      "environmentVariables": [
+        {
+          "name": "PPT_ALLOWLIST_ROOTS",
+          "description": "Comma-separated directory roots allowed for file access (required)",
+          "required": true
+        },
+        {
+          "name": "PPT_ENABLE_WRITE",
+          "description": "Set to 'true' to enable write operations",
+          "default": "false"
+        },
+        {
+          "name": "PPT_ENABLE_COM",
+          "description": "Set to 'true' to activate COM-backed tools: export_slide, export_deck, run_slide_show, recalculate_charts, and export_changed_slides_only. Windows-only — requires pywin32 and Microsoft PowerPoint.",
+          "default": "false"
+        }
+      ],
+      "platforms": ["windows"]
+    },
+    "wordmcp": {
+      "type": "git",
+      "url": "https://github.com/dosev-ai/mcp-office",
+      "command": "pip install -e ./wordmcp",
+      "description": "Word MCP server — 51 tools for document creation, structured editing, tracked changes, and export",
+      "environmentVariables": [
+        {
+          "name": "WORD_ALLOWLIST_ROOTS",
+          "description": "Comma-separated directory roots allowed for file access (required)",
+          "required": true
+        },
+        {
+          "name": "WORD_ENABLE_WRITE",
+          "description": "Set to 'true' to enable write operations",
+          "default": "false"
+        },
+        {
+          "name": "WORD_ENABLE_COM",
+          "description": "Set to 'true' to activate COM-backed tools: manage_tracked_changes and export_document (PDF/HTML). Windows-only — requires pywin32 and Microsoft Word.",
+          "default": "false"
+        }
+      ],
+      "platforms": ["windows"]
+    }
+  },
+  "remoteNetworkAccess": false
+}
