@@ -1,0 +1,153 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Governed Office artifacts from structured intent to reviewed output</title>
+  <desc id="desc">A four-stage technical workflow. Structured input enters local MCP Office servers for Excel, PowerPoint, and Word. Validation and human review gate the workflow before versioned Office artifacts are produced.</desc>
+
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#08111f"/>
+      <stop offset="52%" stop-color="#10233a"/>
+      <stop offset="100%" stop-color="#0f3a33"/>
+    </linearGradient>
+    <linearGradient id="flow" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="50%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#34d399"/>
+    </linearGradient>
+    <linearGradient id="officePanel" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#172554"/>
+      <stop offset="100%" stop-color="#133a36"/>
+    </linearGradient>
+    <filter id="shadow" x="-25%" y="-25%" width="150%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#000000" flood-opacity="0.34"/>
+    </filter>
+    <filter id="softGlow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 Z" fill="#67e8f9"/>
+    </marker>
+    <style>
+      .hero { font: 700 54px Arial, Helvetica, sans-serif; fill: #f8fafc; letter-spacing: -1.2px; }
+      .sub { font: 400 24px Arial, Helvetica, sans-serif; fill: #cbd5e1; }
+      .stage { font: 700 16px Arial, Helvetica, sans-serif; fill: #7dd3fc; letter-spacing: 2.2px; }
+      .heading { font: 700 27px Arial, Helvetica, sans-serif; fill: #f8fafc; }
+      .body { font: 400 18px Arial, Helvetica, sans-serif; fill: #cbd5e1; }
+      .micro { font: 400 14px Arial, Helvetica, sans-serif; fill: #94a3b8; }
+      .pillText { font: 700 16px Arial, Helvetica, sans-serif; fill: #e2e8f0; }
+      .serverLabel { font: 700 20px Arial, Helvetica, sans-serif; fill: #f8fafc; }
+      .serverMeta { font: 400 14px Arial, Helvetica, sans-serif; fill: #cbd5e1; }
+      .card { fill: rgba(15, 23, 42, 0.82); stroke: rgba(148, 163, 184, 0.28); stroke-width: 1.5; }
+      .cardStrong { fill: url(#officePanel); stroke: rgba(103, 232, 249, 0.44); stroke-width: 1.8; }
+      .pill { fill: rgba(15, 23, 42, 0.72); stroke: rgba(148, 163, 184, 0.26); stroke-width: 1; }
+      .flowLine { fill: none; stroke: url(#flow); stroke-width: 5; stroke-linecap: round; marker-end: url(#arrow); }
+      .thin { fill: none; stroke: rgba(148, 163, 184, 0.34); stroke-width: 1.4; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#background)"/>
+  <circle cx="1375" cy="120" r="280" fill="#38bdf8" opacity="0.065"/>
+  <circle cx="190" cy="790" r="330" fill="#34d399" opacity="0.06"/>
+  <ellipse cx="815" cy="455" rx="520" ry="190" fill="#7c3aed" opacity="0.035" filter="url(#softGlow)"/>
+
+  <g transform="translate(88 82)">
+    <text class="hero" x="0" y="0">Governed Office artifacts, built like code</text>
+    <text class="sub" x="0" y="46">Structured intent becomes a local, validated and reviewable Excel, PowerPoint or Word output.</text>
+  </g>
+
+  <g transform="translate(80 198)" filter="url(#shadow)">
+    <rect class="card" x="0" y="0" width="1440" height="540" rx="34"/>
+  </g>
+
+  <g transform="translate(118 245)">
+    <rect class="card" x="0" y="0" width="270" height="390" rx="28"/>
+    <text class="stage" x="28" y="42">01 · INTENT</text>
+    <text class="heading" x="28" y="85">Structured input</text>
+    <text class="body" x="28" y="122">A prompt, dataset, template</text>
+    <text class="body" x="28" y="150">or document contract defines</text>
+    <text class="body" x="28" y="178">the required artifact.</text>
+    <rect class="pill" x="28" y="220" width="214" height="46" rx="15"/>
+    <text class="pillText" x="48" y="249">JSON / tables / text</text>
+    <rect class="pill" x="28" y="280" width="214" height="46" rx="15"/>
+    <text class="pillText" x="48" y="309">Template + constraints</text>
+    <g transform="translate(28 344)">
+      <circle cx="9" cy="-5" r="5" fill="#38bdf8"/>
+      <text class="micro" x="24" y="0">Explicit scope before mutation</text>
+    </g>
+  </g>
+
+  <g transform="translate(455 225)">
+    <rect class="cardStrong" x="0" y="0" width="400" height="430" rx="30"/>
+    <text class="stage" x="30" y="44">02 · LOCAL EXECUTION</text>
+    <text class="heading" x="30" y="86">MCP Office</text>
+    <text class="body" x="30" y="120">Distinct local servers expose governed,</text>
+    <text class="body" x="30" y="148">deterministic Office operations.</text>
+    <g transform="translate(30 186)">
+      <rect x="0" y="0" width="340" height="62" rx="18" fill="rgba(22,101,52,0.42)" stroke="rgba(74,222,128,0.48)"/>
+      <rect x="0" y="0" width="8" height="62" rx="4" fill="#22c55e"/>
+      <text class="serverLabel" x="26" y="27">Excel MCP</text>
+      <text class="serverMeta" x="26" y="49">workbooks · tables · validation · export</text>
+    </g>
+    <g transform="translate(30 260)">
+      <rect x="0" y="0" width="340" height="62" rx="18" fill="rgba(154,52,18,0.36)" stroke="rgba(251,146,60,0.46)"/>
+      <rect x="0" y="0" width="8" height="62" rx="4" fill="#f97316"/>
+      <text class="serverLabel" x="26" y="27">PowerPoint MCP</text>
+      <text class="serverMeta" x="26" y="49">slides · review · output contracts · export</text>
+    </g>
+    <g transform="translate(30 334)">
+      <rect x="0" y="0" width="340" height="62" rx="18" fill="rgba(30,64,175,0.34)" stroke="rgba(96,165,250,0.50)"/>
+      <rect x="0" y="0" width="8" height="62" rx="4" fill="#3b82f6"/>
+      <text class="serverLabel" x="26" y="27">Word MCP</text>
+      <text class="serverMeta" x="26" y="49">templates · tracked changes · structural QA</text>
+    </g>
+  </g>
+
+  <g transform="translate(922 245)">
+    <rect class="card" x="0" y="0" width="250" height="390" rx="28"/>
+    <text class="stage" x="26" y="42">03 · GATE</text>
+    <text class="heading" x="26" y="85">Validate &amp; review</text>
+    <text class="body" x="26" y="122">Contracts, allowlists and</text>
+    <text class="body" x="26" y="150">human review prevent silent</text>
+    <text class="body" x="26" y="178">or unbounded output.</text>
+    <g transform="translate(26 222)">
+      <rect class="pill" x="0" y="0" width="198" height="44" rx="14"/>
+      <path d="M18 23 l8 8 l16 -18" fill="none" stroke="#34d399" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <text class="pillText" x="55" y="29">Contract checks</text>
+    </g>
+    <g transform="translate(26 278)">
+      <rect class="pill" x="0" y="0" width="198" height="44" rx="14"/>
+      <path d="M18 23 l8 8 l16 -18" fill="none" stroke="#34d399" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+      <text class="pillText" x="55" y="29">Human approval</text>
+    </g>
+    <text class="micro" x="26" y="358">Failed checks stop the flow.</text>
+  </g>
+
+  <g transform="translate(1238 245)">
+    <rect class="card" x="0" y="0" width="244" height="390" rx="28"/>
+    <text class="stage" x="26" y="42">04 · OUTPUT</text>
+    <text class="heading" x="26" y="85">Versioned artifact</text>
+    <text class="body" x="26" y="122">A local Office file with</text>
+    <text class="body" x="26" y="150">explicit provenance and</text>
+    <text class="body" x="26" y="178">review status.</text>
+    <g transform="translate(26 220)">
+      <rect x="0" y="0" width="54" height="66" rx="10" fill="rgba(34,197,94,0.18)" stroke="rgba(74,222,128,0.55)"/>
+      <text x="13" y="40" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#dcfce7">XLSX</text>
+      <rect x="66" y="0" width="54" height="66" rx="10" fill="rgba(249,115,22,0.18)" stroke="rgba(251,146,60,0.55)"/>
+      <text x="75" y="40" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#ffedd5">PPTX</text>
+      <rect x="132" y="0" width="54" height="66" rx="10" fill="rgba(59,130,246,0.18)" stroke="rgba(96,165,250,0.55)"/>
+      <text x="139" y="40" font-family="Arial, Helvetica, sans-serif" font-size="15" font-weight="700" fill="#dbeafe">DOCX</text>
+    </g>
+    <rect class="pill" x="26" y="312" width="190" height="44" rx="14"/>
+    <text class="pillText" x="47" y="340">Reviewable · reusable</text>
+  </g>
+
+  <path class="flowLine" d="M 398 440 C 420 440 426 440 445 440"/>
+  <path class="flowLine" d="M 865 440 C 884 440 890 440 912 440"/>
+  <path class="flowLine" d="M 1182 440 C 1200 440 1207 440 1228 440"/>
+
+  <g transform="translate(104 780)">
+    <rect x="0" y="0" width="1392" height="72" rx="24" fill="rgba(2,6,23,0.48)" stroke="rgba(148,163,184,0.22)"/>
+    <text x="28" y="31" font-family="Arial, Helvetica, sans-serif" font-size="17" font-weight="700" fill="#f8fafc">Boundary:</text>
+    <text x="122" y="31" font-family="Arial, Helvetica, sans-serif" font-size="17" fill="#cbd5e1">local-first MCP servers; Windows and Microsoft Office are required for COM-backed operations.</text>
+    <text x="28" y="55" font-family="Arial, Helvetica, sans-serif" font-size="14" fill="#94a3b8">Developer-first execution layer · not an in-app assistant replacement · no cloud dependency for the core local workflow</text>
+  </g>
+</svg>
