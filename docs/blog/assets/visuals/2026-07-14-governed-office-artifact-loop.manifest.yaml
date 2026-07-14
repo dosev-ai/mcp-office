@@ -1,0 +1,47 @@
+schema_version: 1
+visual_id: mcp-office.governed-office-artifact-loop
+content_id: post:governed-office-artifacts-built-like-code
+source_class: project_owned
+project: mcp-office
+source_repository: dosev-ai/mcp-office
+source_path: docs/blog/assets/visuals/2026-07-14-governed-office-artifact-loop.svg
+
+role: explanatory_cover
+section_anchor: governed-artifact-loop
+sequence: 0
+
+alt: >-
+  Four-stage diagram showing structured input entering local MCP Office
+  servers for Excel, PowerPoint and Word, followed by validation and human
+  review before producing versioned Office artifacts.
+caption: >-
+  MCP Office turns structured intent into local, validated and reviewable
+  Excel, PowerPoint and Word artifacts.
+semantic_description: >-
+  The diagram explains a governed Office artifact workflow. A prompt,
+  dataset, template or document contract defines the intended output.
+  Distinct local MCP servers execute Excel, PowerPoint or Word operations.
+  Contract checks, allowlists and human approval gate the workflow before a
+  versioned XLSX, PPTX or DOCX artifact is accepted. The visual states the
+  local-first boundary and notes that Windows and Microsoft Office are
+  required for COM-backed operations.
+
+claims:
+  - MCP Office provides distinct local servers for Excel, PowerPoint and Word.
+  - The workflow uses explicit validation and review gates.
+  - Core execution is local-first.
+  - Windows and Microsoft Office are required for COM-backed operations.
+
+boundaries:
+  - Does not present MCP Office as an in-app assistant replacement.
+  - Does not imply unattended publication or automatic approval.
+  - Does not represent Mail MCP as currently available.
+  - Does not imply cloud or enterprise deployment maturity.
+
+creation_method: original_svg
+contributor: dosev-ai
+license: repository_license
+public_safe: true
+guide_eligible: true
+external_resources: false
+scripts: false
