@@ -1,0 +1,155 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">The Publishing Workflow Is Live</title>
+  <desc id="desc">A governed publishing workflow with privacy and access controls, a central article draft, content review checks, cross-device validation, human approval, and controlled publication.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#071923"/>
+      <stop offset="0.55" stop-color="#0b2b36"/>
+      <stop offset="1" stop-color="#0d3940"/>
+    </linearGradient>
+    <linearGradient id="teal" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#70e1d1"/>
+      <stop offset="1" stop-color="#1aa89c"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#153846"/>
+      <stop offset="1" stop-color="#0f2732"/>
+    </linearGradient>
+    <linearGradient id="paper" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#e8f1f2"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#000000" flood-opacity="0.32"/>
+    </filter>
+    <filter id="soft" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="22"/>
+    </filter>
+    <style>
+      .title{font-family:Inter,Segoe UI,Arial,sans-serif;font-weight:700;fill:#f4fbfc}
+      .label{font-family:Inter,Segoe UI,Arial,sans-serif;font-weight:600;fill:#eef8f8}
+      .small{font-family:Inter,Segoe UI,Arial,sans-serif;font-weight:500;fill:#bdd2d5}
+      .muted{fill:#8ea9ad}
+      .line{stroke:#4ed6c7;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+      .thin{stroke:#78ede0;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+    </style>
+  </defs>
+
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <circle cx="1260" cy="110" r="260" fill="#0f5962" opacity="0.28" filter="url(#soft)"/>
+  <circle cx="250" cy="810" r="300" fill="#0b5961" opacity="0.18" filter="url(#soft)"/>
+  <g opacity="0.18" fill="#72dcd1">
+    <circle cx="70" cy="70" r="3"/><circle cx="105" cy="70" r="3"/><circle cx="140" cy="70" r="3"/><circle cx="175" cy="70" r="3"/>
+    <circle cx="70" cy="105" r="3"/><circle cx="105" cy="105" r="3"/><circle cx="140" cy="105" r="3"/><circle cx="175" cy="105" r="3"/>
+    <circle cx="70" cy="140" r="3"/><circle cx="105" cy="140" r="3"/><circle cx="140" cy="140" r="3"/><circle cx="175" cy="140" r="3"/>
+  </g>
+
+  <text x="800" y="95" text-anchor="middle" class="title" font-size="58">The Publishing Workflow Is <tspan fill="#54d8ca">Live.</tspan></text>
+  <text x="800" y="138" text-anchor="middle" class="small" font-size="21" letter-spacing="4">GOVERNED DELIVERY • REVIEW • TEST • APPROVAL</text>
+
+  <g>
+    <rect x="72" y="245" width="235" height="72" rx="16" fill="url(#panel)" stroke="#2a5864"/>
+    <circle cx="112" cy="281" r="19" fill="#1a4c56"/>
+    <circle cx="112" cy="276" r="6" fill="#72ded1"/><path d="M101 292c3-9 19-9 22 0" fill="none" class="thin"/>
+    <text x="146" y="289" class="label" font-size="23">Privacy boundary</text>
+
+    <rect x="72" y="337" width="235" height="72" rx="16" fill="url(#panel)" stroke="#2a5864"/>
+    <circle cx="112" cy="373" r="19" fill="#1a4c56"/>
+    <circle cx="108" cy="371" r="6" fill="none" class="thin"/><path d="M114 371h13m-6 0v8m6-8v5" fill="none" class="thin"/>
+    <text x="146" y="381" class="label" font-size="23">Access control</text>
+
+    <rect x="72" y="429" width="235" height="72" rx="16" fill="url(#panel)" stroke="#2a5864"/>
+    <circle cx="112" cy="465" r="19" fill="#1a4c56"/>
+    <ellipse cx="112" cy="458" rx="10" ry="5" fill="none" class="thin"/><path d="M102 458v14c0 6 20 6 20 0v-14m-20 7c0 6 20 6 20 0" fill="none" class="thin"/>
+    <text x="146" y="473" class="label" font-size="23">Data governance</text>
+  </g>
+
+  <path d="M308 373H360" class="line"/><path d="M348 361l14 12-14 12" fill="none" class="line"/>
+
+  <g transform="translate(355 275)">
+    <path d="M110 0L205 34v86c0 83-54 139-95 158-41-19-95-75-95-158V34z" fill="url(#teal)" stroke="#8bf0e6" stroke-width="4"/>
+    <path d="M110 27l68 24v66c0 61-39 105-68 122-29-17-68-61-68-122V51z" fill="#0d5660" opacity="0.8"/>
+    <rect x="78" y="104" width="64" height="60" rx="10" fill="#e8f8f7"/>
+    <path d="M90 104V86c0-29 40-29 40 0v18" fill="none" stroke="#e8f8f7" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="110" cy="133" r="8" fill="#17414a"/>
+    <rect x="106" y="133" width="8" height="18" rx="4" fill="#17414a"/>
+  </g>
+
+  <path d="M574 373H635" class="line"/><circle cx="604" cy="373" r="10" fill="#08222b" stroke="#78ede0" stroke-width="4"/>
+
+  <g>
+    <rect x="630" y="205" width="420" height="460" rx="30" fill="#08232c" opacity="0.65"/>
+    <rect x="650" y="185" width="420" height="460" rx="30" fill="url(#paper)"/>
+    <rect x="650" y="185" width="420" height="74" rx="30" fill="#dcebed"/>
+    <circle cx="690" cy="222" r="8" fill="#87a4aa"/><circle cx="718" cy="222" r="8" fill="#87a4aa"/><circle cx="746" cy="222" r="8" fill="#87a4aa"/>
+    <rect x="688" y="292" width="344" height="122" rx="16" fill="#b9e1df"/>
+    <path d="M688 394l82-67 55 42 72-64 135 109H688z" fill="#2c7a7c" opacity="0.85"/>
+    <path d="M688 414l103-54 65 31 58-40 118 63H688z" fill="#14545e" opacity="0.92"/>
+    <circle cx="966" cy="325" r="22" fill="#effafa" opacity="0.92"/>
+    <text x="688" y="468" class="title" font-size="34" style="fill:#12313a">The Publishing</text>
+    <text x="688" y="508" class="title" font-size="34" style="fill:#12313a">Workflow Is Live.</text>
+    <rect x="688" y="529" width="88" height="8" rx="4" fill="#40cbbb"/>
+    <rect x="688" y="559" width="316" height="12" rx="6" fill="#c2d0d3"/>
+    <rect x="688" y="583" width="280" height="12" rx="6" fill="#c2d0d3"/>
+    <rect x="688" y="607" width="220" height="12" rx="6" fill="#c2d0d3"/>
+  </g>
+
+  <path d="M1072 373H1125" class="line"/><circle cx="1098" cy="373" r="10" fill="#08222b" stroke="#78ede0" stroke-width="4"/>
+
+  <g>
+    <rect x="1120" y="230" width="300" height="335" rx="26" fill="url(#panel)" stroke="#38636d"/>
+    <text x="1160" y="280" class="title" font-size="29">Release checks</text>
+    <g class="small" font-size="22">
+      <circle cx="1166" cy="327" r="13" fill="#164e56" stroke="#61ded0" stroke-width="3"/><path d="M1159 327l5 5 10-12" fill="none" class="thin"/><text x="1196" y="335">Content review</text>
+      <circle cx="1166" cy="374" r="13" fill="#164e56" stroke="#61ded0" stroke-width="3"/><path d="M1159 374l5 5 10-12" fill="none" class="thin"/><text x="1196" y="382">Privacy scan</text>
+      <circle cx="1166" cy="421" r="13" fill="#164e56" stroke="#61ded0" stroke-width="3"/><path d="M1159 421l5 5 10-12" fill="none" class="thin"/><text x="1196" y="429">Link and route test</text>
+      <circle cx="1166" cy="468" r="13" fill="#164e56" stroke="#61ded0" stroke-width="3"/><path d="M1159 468l5 5 10-12" fill="none" class="thin"/><text x="1196" y="476">Accessibility</text>
+      <circle cx="1166" cy="515" r="13" fill="#164e56" stroke="#61ded0" stroke-width="3"/><path d="M1159 515l5 5 10-12" fill="none" class="thin"/><text x="1196" y="523">Human approval</text>
+    </g>
+  </g>
+
+  <path d="M1422 373H1482" class="line"/><path d="M1470 361l14 12-14 12" fill="none" class="line"/>
+  <g transform="translate(1462 326)">
+    <circle cx="48" cy="48" r="48" fill="url(#teal)"/>
+    <path d="M27 48h37m-14-15 15 15-15 15" fill="none" stroke="#ffffff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="1510" y="447" text-anchor="middle" class="label" font-size="22">Controlled</text>
+  <text x="1510" y="474" text-anchor="middle" class="small" font-size="20">publication</text>
+
+  <path d="M860 646v55" class="line" stroke-dasharray="6 11"/>
+  <text x="800" y="724" text-anchor="middle" class="title" font-size="28">Validate across devices</text>
+  <g transform="translate(435 750)">
+    <rect x="0" y="0" width="220" height="118" rx="13" fill="#d9e8ea"/>
+    <rect x="12" y="12" width="196" height="88" rx="7" fill="#123541"/>
+    <rect x="27" y="27" width="166" height="25" rx="5" fill="#43bdb2"/>
+    <rect x="27" y="64" width="120" height="7" rx="3" fill="#9eb9bd"/><rect x="27" y="79" width="150" height="7" rx="3" fill="#9eb9bd"/>
+    <rect x="87" y="118" width="46" height="15" fill="#bccfd2"/><rect x="61" y="133" width="98" height="10" rx="5" fill="#d9e8ea"/>
+  </g>
+  <g transform="translate(710 746)">
+    <rect x="0" y="0" width="210" height="132" rx="14" fill="#d9e8ea"/>
+    <rect x="14" y="14" width="182" height="99" rx="7" fill="#123541"/>
+    <rect x="30" y="30" width="150" height="24" rx="5" fill="#43bdb2"/>
+    <rect x="30" y="67" width="108" height="7" rx="3" fill="#9eb9bd"/><rect x="30" y="82" width="140" height="7" rx="3" fill="#9eb9bd"/>
+    <path d="M-22 132h254l-26 18H4z" fill="#c8dadd"/>
+  </g>
+  <g transform="translate(985 755)">
+    <rect x="0" y="0" width="112" height="142" rx="16" fill="#d9e8ea"/>
+    <rect x="10" y="12" width="92" height="115" rx="8" fill="#123541"/>
+    <rect x="22" y="26" width="68" height="22" rx="5" fill="#43bdb2"/>
+    <rect x="22" y="61" width="52" height="6" rx="3" fill="#9eb9bd"/><rect x="22" y="75" width="65" height="6" rx="3" fill="#9eb9bd"/>
+  </g>
+  <g transform="translate(1135 770)">
+    <rect x="0" y="0" width="70" height="126" rx="16" fill="#d9e8ea"/>
+    <rect x="8" y="13" width="54" height="92" rx="7" fill="#123541"/>
+    <rect x="16" y="25" width="38" height="18" rx="4" fill="#43bdb2"/>
+    <rect x="16" y="55" width="29" height="5" rx="2" fill="#9eb9bd"/><rect x="16" y="67" width="38" height="5" rx="2" fill="#9eb9bd"/>
+    <circle cx="35" cy="115" r="5" fill="#93aaae"/>
+  </g>
+
+  <rect x="1245" y="748" width="270" height="120" rx="22" fill="url(#panel)" stroke="#35636c"/>
+  <circle cx="1290" cy="790" r="20" fill="#164e56" stroke="#61ded0" stroke-width="3"/>
+  <path d="M1280 790l7 7 14-17" fill="none" stroke="#75e7da" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="1325" y="798" class="label" font-size="23">Browser UAT</text>
+  <text x="1290" y="834" class="small" font-size="19">Desktop • Tablet • Mobile</text>
+  <text x="1290" y="859" class="small" font-size="19">Network • Security • Routes</text>
+</svg>
