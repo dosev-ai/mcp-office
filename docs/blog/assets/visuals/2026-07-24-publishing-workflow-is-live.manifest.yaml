@@ -1,0 +1,45 @@
+schema_version: 1
+visual_id: dosevai.publishing-workflow-is-live
+content_id: post:publishing-workflow-is-live
+source_class: project_owned
+project: dosevai-com
+source_repository: dosev-ai/mcp-office
+source_path: docs/blog/assets/visuals/2026-07-24-publishing-workflow-is-live.svg
+
+role: explanatory_cover
+section_anchor: publishing-workflow
+sequence: 0
+
+alt: >-
+  Governed publishing workflow showing privacy and access controls, an article
+  draft, release checks, cross-device browser validation, human approval and
+  controlled publication.
+caption: >-
+  The first dosevai.com post delivered through private drafting, review,
+  automated validation, explicit approval and production verification.
+semantic_description: >-
+  The visual presents a controlled publishing pipeline. Privacy, access and
+  data-governance controls feed a private article draft. The draft then passes
+  content, privacy, link, accessibility and human-approval checks. Desktop,
+  tablet and mobile browser validation confirms the public experience before
+  controlled publication. The diagram represents a governed public
+  proof-of-work process; it does not imply unattended publishing or enterprise
+  platform maturity.
+
+claims:
+  - The publishing workflow uses private drafting and explicit human approval.
+  - Public delivery includes content, privacy, route, accessibility and browser validation.
+  - The final publication step is controlled rather than automatic.
+boundaries:
+  - Does not imply fully autonomous publishing or approval.
+  - Does not expose internal action identifiers, repository secrets or private evidence.
+  - Does not claim enterprise-platform maturity or universal reliability.
+  - Does not represent employer or client systems.
+
+creation_method: original_svg_from_selected_visual_concept
+contributor: dosev-ai
+license: repository_license
+public_safe: true
+guide_eligible: true
+external_resources: false
+scripts: false
