@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "proof_id": "excel-to-powerpoint-governed-workflow",
+  "title": "Supplier Performance — Synthetic Public Proof",
+  "source": {
+    "type": "tabular_payload",
+    "file": "synthetic_supplier_performance.csv",
+    "required_columns": [
+      "category",
+      "current_score",
+      "target_score",
+      "variance_points",
+      "status",
+      "accountable_owner"
+    ]
+  },
+  "slides": [
+    {
+      "slide_id": "title",
+      "layout": "title",
+      "title": "Supplier Performance",
+      "subtitle": "Synthetic public proof"
+    },
+    {
+      "slide_id": "summary",
+      "layout": "kpi_summary",
+      "title": "Executive Summary",
+      "metrics": [
+        {
+          "label": "On track",
+          "aggregation": "count_if",
+          "field": "status",
+          "value": "On track"
+        },
+        {
+          "label": "Review",
+          "aggregation": "count_if",
+          "field": "status",
+          "value": "Review"
+        },
+        {
+          "label": "Source rows",
+          "aggregation": "row_count"
+        }
+      ]
+    },
+    {
+      "slide_id": "detail",
+      "layout": "table",
+      "title": "Category Detail",
+      "columns": [
+        "category",
+        "current_score",
+        "target_score",
+        "variance_points",
+        "status",
+        "accountable_owner"
+      ]
+    }
+  ],
+  "controls": {
+    "approved_paths_required": true,
+    "explicit_write_confirmation_required": true,
+    "artifact_lineage_required": true,
+    "synthetic_public_data_only": true
+  },
+  "boundaries": {
+    "gantt_generation": false,
+    "automated_visual_repair": false,
+    "mail_distribution": false,
+    "workflow_runtime_public_release": false
+  }
+}
