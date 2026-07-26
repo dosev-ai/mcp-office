@@ -49,6 +49,6 @@ This proof does not claim:
 
 ## Public project
 
-MCP Office currently publishes ExcelMCP, PowerPointMCP, and WordMCP. MailMCP is coming next after its package-specific release gates pass.
+MCP Office currently publishes `excelmcp`, `pptmcp`, and `wordmcp`. `mailmcp` is coming next after its package-specific release gates pass.
 
 Return to the [MCP Office repository](../../../README.md).
