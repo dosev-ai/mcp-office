@@ -19,7 +19,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install ruff
-        run: pip install ruff
+        run: pip install ruff==0.15.4
       - name: Ruff check
         run: ruff check excelmcp/src pptmcp/src wordmcp/src shared/ --ignore E501
 
