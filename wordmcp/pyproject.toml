@@ -24,7 +24,7 @@ classifiers = [
 dependencies = ["fastmcp>=3.2.0,<4", "python-docx>=0.8.11"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-mock>=3.12", "ruff>=0.4", "pytest-socket>=0.7"]
+dev = ["pytest>=8.0", "pytest-mock>=3.12", "ruff==0.15.4", "pytest-socket>=0.7"]
 com = ["pywin32>=306; sys_platform == 'win32'"]
 
 [project.urls]
