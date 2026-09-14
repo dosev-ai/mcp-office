@@ -1,0 +1,50 @@
+# MailMCP is a local stdio server. It requires Windows and classic Microsoft Outlook desktop.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    required: []
+    properties:
+      outlookEnableWrite:
+        type: string
+        default: "false"
+        description: Enable non-send Outlook mutations. Confirmation gates still apply.
+      outlookEnableSend:
+        type: string
+        default: "false"
+        description: Enable sending mail. confirm=true is still required by send tools.
+      outlookEnableDelete:
+        type: string
+        default: "false"
+        description: Enable message deletion. confirm=true is still required.
+      outlookEnableRules:
+        type: string
+        default: "false"
+        description: Enable forwarding-rule mutations. confirm=true is still required.
+      outlookAllowlistFolders:
+        type: string
+        default: "Inbox,Contacts"
+        description: Comma-separated Outlook folders accessible to MailMCP.
+      outlookAllowlistDomains:
+        type: string
+        default: ""
+        description: Optional comma-separated recipient-domain allowlist.
+      outlookMaxItems:
+        type: string
+        default: "50"
+        description: Maximum items returned per bounded read operation.
+  commandFunction:
+    |-
+    (config) => ({
+      command: 'python',
+      args: ['-m', 'mailmcp'],
+      env: {
+        OUTLOOK_ENABLE_WRITE: config.outlookEnableWrite || 'false',
+        OUTLOOK_ENABLE_SEND: config.outlookEnableSend || 'false',
+        OUTLOOK_ENABLE_DELETE: config.outlookEnableDelete || 'false',
+        OUTLOOK_ENABLE_RULES: config.outlookEnableRules || 'false',
+        OUTLOOK_ALLOWLIST_FOLDERS: config.outlookAllowlistFolders || 'Inbox,Contacts',
+        OUTLOOK_ALLOWLIST_DOMAINS: config.outlookAllowlistDomains || '',
+        OUTLOOK_MAX_ITEMS: config.outlookMaxItems || '50'
+      }
+    })
