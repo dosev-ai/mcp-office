@@ -14,8 +14,8 @@ _OL_MAIL_CLASS = 43
 
 
 def list_tasks(include_completed: bool = False, due_before: str | None = None, top: int = 20, folder_path: str | None = None, account_email: str | None = None) -> dict:
-    if folder_path:
-        _assert_allowed(folder_path, account_email)
+    folder_to_check = folder_path or "Tasks"
+    _assert_allowed(folder_to_check, account_email)
     cfg = get_effective_config(account_email)
     top = min(top, cfg.max_items)
     due_dt_obj = None
@@ -44,7 +44,9 @@ def list_tasks(include_completed: bool = False, due_before: str | None = None, t
         try:
             items = items.Restrict(" AND ".join(f"({f})" for f in filters))
         except Exception as exc:
-            logger.warning("list_tasks: Restrict failed (%s); scanning all", exc)
+            raise RuntimeError(
+                "Outlook rejected the requested task filter; no unfiltered tasks were returned."
+            ) from exc
     result = []
     for task in items:
         if len(result) >= top:
@@ -65,6 +67,7 @@ def create_task(subject: str, body: str | None = None, due_date: str | None = No
     _assert_write_enabled(account_email=account_email)
     if not confirm:
         raise ValueError("confirm=True is required to create a task. Set confirm=True to proceed.")
+    _assert_allowed("Tasks", account_email)
     if not subject or not subject.strip():
         raise ValueError("subject is required and cannot be blank")
     priority_lower = priority.lower()
@@ -113,9 +116,15 @@ def complete_task(entry_id: str, confirm: bool = False, account_email: str | Non
     parent_name = item.Parent.Name
     if account_email is not None:
         default_tasks = _folders._get_tasks_folder(account_email=account_email)
-        if getattr(default_tasks, "EntryID", None) is None or getattr(item.Parent, "EntryID", None) != getattr(default_tasks, "EntryID", None):
+        parent_entry_id = getattr(item.Parent, "EntryID", None)
+        default_entry_id = getattr(default_tasks, "EntryID", None)
+        if default_entry_id is not None and parent_entry_id == default_entry_id:
+            _assert_allowed("Tasks", account_email)
+        else:
             _assert_allowed(parent_name, account_email)
-    elif parent_name not in ("Tasks", "To-Do"):
+    elif parent_name in ("Tasks", "To-Do"):
+        _assert_allowed("Tasks", account_email)
+    else:
         _assert_allowed(parent_name, account_email)
     item.Status = 2
     item.Complete = True
@@ -147,8 +156,10 @@ def list_meeting_requests(top: int = 20, folder_name: str | None = None, folder_
         pass
     try:
         items = items.Restrict("[MessageClass] = 'IPM.Schedule.Meeting.Request'")
-    except Exception:
-        pass
+    except Exception as exc:
+        raise RuntimeError(
+            "Outlook rejected the meeting-request filter; no unfiltered messages were returned."
+        ) from exc
     result = []
     for item in items:
         if len(result) >= top:
