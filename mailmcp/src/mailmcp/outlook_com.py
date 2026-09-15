@@ -59,12 +59,12 @@ class _FolderResult(list):
         self.scan_capped = scan_capped
 
 
-def search_all_folders_worker(folder_name: str, subject: str | None = None, sender: str | None = None, body_contains: str | None = None, top: int | None = None, scan_limit: int | None = None) -> _FolderResult:
+def search_all_folders_worker(folder_name: str, subject: str | None = None, sender: str | None = None, body_contains: str | None = None, top: int | None = None, scan_limit: int | None = None, account_email: str | None = None) -> _FolderResult:
     import pythoncom
     pythoncom.CoInitialize()
     try:
         from mailmcp import _messages
-        raw = _messages.search_messages(folder_name=folder_name, subject=subject, sender=sender, body_contains=body_contains, top=top, scan_limit=scan_limit, include_scan_metadata=True)
+        raw = _messages.search_messages(folder_name=folder_name, subject=subject, sender=sender, body_contains=body_contains, top=top, account_email=account_email, scan_limit=scan_limit, include_scan_metadata=True)
         if isinstance(raw, dict):
             found = list(raw.get("messages") or [])
             scan_capped = bool(raw.get("scan_capped", False))
