@@ -12,8 +12,18 @@ def outlook_list_accounts() -> dict:
     return {"accounts": ol.list_accounts()}
 
 
-def outlook_list_folders(store_name: str | None = None, depth: int = 1) -> dict:
-    return {"folders": ol.list_folders(store_name=store_name, depth=depth)}
+def outlook_list_folders(
+    store_name: str | None = None,
+    depth: int = 1,
+    account_email: str | None = None,
+) -> dict:
+    return {
+        "folders": ol.list_folders(
+            store_name=store_name,
+            depth=depth,
+            account_email=account_email,
+        )
+    }
 
 
 def outlook_list_messages(
