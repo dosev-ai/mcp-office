@@ -100,12 +100,13 @@ def outlook_bulk_message_action(
         raise ValueError("confirm=True is required for bulk message actions. This safety gate prevents accidental mutations.")
     if not entry_ids:
         raise ValueError("entry_ids must be a non-empty list of EntryIDs.")
+    operation_normalized = operation.strip().lower()
     valid_ops = {"move", "flag", "mark_read", "mark_unread", "delete", "mark_junk"}
-    if operation not in valid_ops:
+    if operation_normalized not in valid_ops:
         raise ValueError(f"Unknown operation: {operation!r}. Valid: {', '.join(sorted(valid_ops))}")
-    if operation == "move" and target_folder is None:
+    if operation_normalized == "move" and target_folder is None:
         raise ValueError("target_folder is required for operation='move'")
-    if operation == "flag" and flag_status is None:
+    if operation_normalized == "flag" and flag_status is None:
         raise ValueError("flag_status is required for operation='flag'")
     try:
         bulk_limit = max(1, min(int(os.environ.get("OUTLOOK_BULK_LIMIT", "50")), 200))
@@ -119,7 +120,7 @@ def outlook_bulk_message_action(
     for eid in entry_ids:
         try:
             result = handle_message_action(
-                operation=operation, entry_id=eid, target_folder=target_folder,
+                operation=operation_normalized, entry_id=eid, target_folder=target_folder,
                 flag_status=flag_status, permanent=permanent, confirm=confirm,
                 account_email=account_email,
             )
