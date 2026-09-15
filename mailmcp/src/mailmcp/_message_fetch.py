@@ -11,6 +11,13 @@ from mailmcp._formatters import _msg_header
 logger = logging.getLogger(__name__)
 
 
+def _server_version() -> str:
+    try:
+        return importlib.metadata.version("mcp-office")
+    except importlib.metadata.PackageNotFoundError:
+        return "unknown"
+
+
 def health() -> dict:
     try:
         app = _core._get_outlook()
@@ -19,7 +26,7 @@ def health() -> dict:
             "outlook_name": getattr(app, "Name", "Microsoft Outlook"),
             "outlook_version": getattr(app, "Version", "unknown"),
             "send_enabled": get_config().enable_send,
-            "server_version": importlib.metadata.version("mcp-office"),
+            "server_version": _server_version(),
         }
     except Exception as exc:
         return {"status": "error", "message": str(exc)}
