@@ -32,7 +32,6 @@ def save_attachments(entry_id: str, save_dir: str) -> list[dict]:
     max_bytes = cfg.attachment_max_mb * 1024 * 1024
     saved = []
     seen_names: set[str] = set()
-    name_counters: dict[str, int] = {}
     for att in msg.Attachments:
         size = getattr(att, "Size", 0)
         raw_name = att.FileName or f"attachment_{att.Index}"
@@ -45,20 +44,15 @@ def save_attachments(entry_id: str, save_dir: str) -> list[dict]:
         if Path(name).suffix.lower() not in _folders._ALLOWED_SAVE_EXTENSIONS:
             saved.append({"name": name, "skipped": True, "reason": "file extension not in allowlist"})
             continue
-        name_lower = name.lower()
-        if name_lower in seen_names:
-            stem = Path(name).stem
-            suffix = Path(name).suffix
-            counter = name_counters.get(name_lower, 0) + 1
+        stem = Path(name).stem
+        suffix = Path(name).suffix
+        candidate = name
+        counter = 0
+        while candidate.lower() in seen_names or (dest / candidate).exists():
+            counter += 1
             candidate = f"{stem}_{counter}{suffix}"
-            while candidate.lower() in seen_names:
-                counter += 1
-                candidate = f"{stem}_{counter}{suffix}"
-            name_counters[name_lower] = counter
-            seen_names.add(candidate.lower())
-            name = candidate
-        else:
-            seen_names.add(name_lower)
+        name = candidate
+        seen_names.add(name.lower())
         out_path = dest / name
         if not out_path.resolve().is_relative_to(dest):
             raise ValueError(f"Resolved attachment path escapes save_dir: {out_path!r}")
