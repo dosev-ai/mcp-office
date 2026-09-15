@@ -151,8 +151,15 @@ def update_calendar_event(entry_id: str, subject: str | None = None, start_iso: 
         item.AllDayEvent = all_day_event
     if required_attendees is not None or optional_attendees is not None:
         try:
-            while item.Recipients.Count > 0:
-                item.Recipients.Remove(1)
+            recipient_types_to_replace: set[int] = set()
+            if required_attendees is not None:
+                recipient_types_to_replace.add(1)
+            if optional_attendees is not None:
+                recipient_types_to_replace.add(2)
+            for index in range(item.Recipients.Count, 0, -1):
+                recipient = item.Recipients.Item(index)
+                if getattr(recipient, "Type", None) in recipient_types_to_replace:
+                    item.Recipients.Remove(index)
             for email in required_attendees or []:
                 recip = item.Recipients.Add(email)
                 recip.Type = 1
