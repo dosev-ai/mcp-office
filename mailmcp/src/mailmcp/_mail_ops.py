@@ -22,6 +22,29 @@ def _jet_escape(value: str) -> str:
     return value.replace("'", "''")
 
 
+def _effective_account_for_item(item, account_email: str | None) -> str | None:
+    if account_email is not None:
+        _folders._assert_object_belongs_to_account(item, account_email, object_label="message")
+        return account_email.strip().lower()
+    if not _core._account_overrides:
+        return None
+    mapi = _core._mapi()
+    store = _folders._resolve_store_for_object(item)
+    if store is None:
+        raise PermissionError("Cannot determine the message's Outlook account.")
+    store_id = _folders._store_id(store)
+    if not store_id:
+        raise PermissionError("Cannot determine the message's Outlook store identity.")
+    index = _folders._build_account_store_index(mapi)
+    owners = [
+        smtp for smtp, store_ids in index["store_ids_by_smtp"].items()
+        if store_id in store_ids
+    ]
+    if len(owners) != 1:
+        raise PermissionError("Cannot resolve a unique Outlook account for the message.")
+    return owners[0]
+
+
 def send_mail(entry_id: str, confirm: bool = False, account_email: str | None = None) -> dict:
     cfg = get_effective_config(account_email)
     if not cfg.enable_send:
@@ -101,33 +124,53 @@ def mark_read(entry_id: str, read: bool = True, confirm: bool = False, account_e
     return {"ok": True, "entry_id": entry_id, "read": read}
 
 
-def get_conversation_thread(conversation_id: str | None = None, max_items: int = 50, entry_id: str | None = None) -> dict:
+def get_conversation_thread(
+    conversation_id: str | None = None,
+    max_items: int = 50,
+    entry_id: str | None = None,
+    account_email: str | None = None,
+) -> dict:
     if conversation_id is None and entry_id is None:
         raise ValueError("At least one of 'conversation_id' or 'entry_id' must be provided.")
+    effective_account = account_email.strip().lower() if isinstance(account_email, str) and account_email.strip() else None
+    if entry_id is None and effective_account is None and _core._account_overrides:
+        raise ValueError("account_email is required for conversation_id-only lookup when per-account policy is configured.")
     if conversation_id is None:
         mapi = _core._mapi()
         try:
             msg = mapi.GetItemFromID(entry_id)
         except Exception as exc:
             raise ValueError(f"Could not resolve entry_id to a conversation (entry_id={entry_id!r})") from exc
-        _assert_allowed(msg.Parent.Name)
+        effective_account = _effective_account_for_item(msg, effective_account)
+        _assert_allowed(msg.Parent.Name, effective_account)
         conversation_id = getattr(msg, "ConversationID", None)
         if not conversation_id:
             raise ValueError(f"Message with entry_id={entry_id!r} has no ConversationID.")
-    cfg = get_config()
+    cfg = get_effective_config(effective_account)
     limit = min(max_items, cfg.max_items)
     messages: list[dict] = []
     conv_topic = None
     if entry_id is not None:
         try:
-            conv_topic = getattr(_core._mapi().GetItemFromID(entry_id), "ConversationTopic", None)
+            source = _core._mapi().GetItemFromID(entry_id)
+            source_account = _effective_account_for_item(source, effective_account)
+            if effective_account is None:
+                effective_account = source_account
+                cfg = get_effective_config(effective_account)
+                limit = min(max_items, cfg.max_items)
+            conv_topic = getattr(source, "ConversationTopic", None)
         except Exception:
             pass
+    folder_resolver = (
+        (lambda name: _folders._folder_by_name_for_account(name, account_email=effective_account))
+        if effective_account is not None
+        else _folders._folder_by_name
+    )
     if conv_topic is None:
         scan_count = 0
         for folder_name in cfg.allowlist_folders:
             try:
-                items = _folders._folder_by_name(folder_name).Items
+                items = folder_resolver(folder_name).Items
                 for msg in items:
                     scan_count += 1
                     if scan_count > _MAX_THREAD_SCAN_ITEMS:
@@ -144,13 +187,21 @@ def get_conversation_thread(conversation_id: str | None = None, max_items: int =
     escaped_topic = _jet_escape(conv_topic)
     for folder_name in cfg.allowlist_folders:
         try:
-            restricted = _folders._folder_by_name(folder_name).Items.Restrict(f"[ConversationTopic] = '{escaped_topic}'")
+            restricted = folder_resolver(folder_name).Items.Restrict(f"[ConversationTopic] = '{escaped_topic}'")
             for msg in restricted:
                 if getattr(msg, "ConversationID", None) != conversation_id:
                     continue
                 try:
                     body = getattr(msg, "Body", "") or ""
-                    messages.append({"entry_id": msg.EntryID, "subject": _redact(getattr(msg, "Subject", "") or ""), "sender_name": _redact(getattr(msg, "SenderName", "") or ""), "sender_email": _redact(_resolve_sender_email(msg)), "received_time": _fmt_date(getattr(msg, "ReceivedTime", None)), "body_preview": _redact(body[: cfg.max_body_chars]), "folder_name": folder_name})
+                    messages.append({
+                        "entry_id": msg.EntryID,
+                        "subject": _redact(getattr(msg, "Subject", "") or "", effective_account),
+                        "sender_name": _redact(getattr(msg, "SenderName", "") or "", effective_account),
+                        "sender_email": _redact(_resolve_sender_email(msg), effective_account),
+                        "received_time": _fmt_date(getattr(msg, "ReceivedTime", None)),
+                        "body_preview": _redact(body[: cfg.max_body_chars], effective_account),
+                        "folder_name": folder_name,
+                    })
                 except Exception as exc:
                     logger.debug("Skipping message in conversation thread: %s", exc)
         except Exception as exc:
@@ -164,6 +215,7 @@ def mark_junk(entry_id: str, confirm: bool = False, account_email: str | None = 
     _core._assert_write_enabled(account_email=account_email)
     if not confirm:
         raise ValueError("confirm=True is required to mark a message as junk.")
+    _assert_allowed("Junk Email", account_email)
     mapi = _core._mapi()
     try:
         item = mapi.GetItemFromID(entry_id)
@@ -180,8 +232,18 @@ def mark_junk(entry_id: str, confirm: bool = False, account_email: str | None = 
 def _get_rules_collection(account_email: str | None = None):
     mapi = _core._mapi()
     if account_email is None:
+        store = getattr(mapi, "DefaultStore", None)
+        if store is None:
+            try:
+                default_inbox = mapi.GetDefaultFolder(_folders._OL_INBOX)
+                store = _folders._resolve_store_for_object(default_inbox)
+            except Exception as exc:
+                raise RuntimeError(f"Cannot resolve the default Outlook store for rules: {exc}") from exc
+        get_rules = getattr(store, "GetRules", None)
+        if not callable(get_rules):
+            raise RuntimeError("Cannot access Outlook rules: default Store.GetRules() is unavailable.")
         try:
-            return mapi.GetRules()
+            return get_rules()
         except Exception as exc:
             raise RuntimeError(f"Cannot access Outlook rules: {exc}") from exc
     store = _folders._find_store_for_account(account_email, mapi=mapi)
@@ -242,6 +304,13 @@ def create_forwarding_rule(forward_to: str, folder_name: str, subject_filter: st
         action = rule.Actions.ForwardTo
         recipient = action.Recipients.Add(forward_to)
         recipient.Resolve()
+        if not getattr(recipient, "Resolved", False):
+            raise PermissionError("Forwarding-rule recipient could not be resolved.")
+        address_entry = getattr(recipient, "AddressEntry", None)
+        if address_entry is None:
+            raise PermissionError("Cannot verify the resolved forwarding-rule recipient.")
+        resolved_smtp = _resolve_smtp_from_entry(address_entry)
+        _assert_domains_allowed([resolved_smtp], account_email=account_email)
         action.Enabled = True
         rules.Save(True)
     except Exception as exc:
