@@ -68,8 +68,16 @@ def outlook_send_mail(entry_id: str, confirm: bool = False, account_email: str |
     return ol.send_mail(entry_id=entry_id, confirm=confirm, account_email=account_email)
 
 
-def outlook_save_attachments(entry_id: str, save_dir: str) -> dict:
-    result = ol.save_attachments(entry_id=entry_id, save_dir=save_dir)
+def outlook_save_attachments(
+    entry_id: str,
+    save_dir: str,
+    account_email: str | None = None,
+) -> dict:
+    result = ol.save_attachments(
+        entry_id=entry_id,
+        save_dir=save_dir,
+        account_email=account_email,
+    )
     return {"saved": result, "count": len(result)}
 
 
