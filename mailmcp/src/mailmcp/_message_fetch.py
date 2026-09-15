@@ -59,50 +59,58 @@ def list_accounts() -> list[dict]:
     return result
 
 
-def list_folders(store_name: str | None = None, depth: int = 1) -> list[dict]:
-    cached_snapshot = _core._get_folder_cache_snapshot() if (store_name is None and depth == 2) else None
-    if cached_snapshot is not None and _core._folder_cache_is_full:
-        result = []
-        for _key, folder in cached_snapshot.items():
-            try:
-                result.append({
-                    "name": folder.Name,
-                    "unread_count": getattr(folder, "UnReadItemCount", 0),
-                    "item_count": getattr(folder, "Items", None) and folder.Items.Count or 0,
-                })
-            except Exception as exc:
-                logger.debug("Skipping stale cached folder object: %s", exc)
-        return result
+def list_folders(
+    store_name: str | None = None,
+    depth: int = 1,
+    account_email: str | None = None,
+) -> list[dict]:
+    cfg = get_effective_config(account_email)
+    allowed = {name.lower() for name in cfg.allowlist_folders}
     mapi = _core._mapi()
-    result = []
-    new_cache: dict = {}
+    if account_email is not None:
+        stores = [_folders._find_store_for_account(account_email, mapi)]
+    else:
+        try:
+            default_inbox = mapi.GetDefaultFolder(_folders._OL_INBOX)
+            default_store = _folders._resolve_store_for_object(default_inbox)
+        except Exception as exc:
+            raise PermissionError("Cannot resolve the default Outlook store for folder discovery.") from exc
+        if default_store is None:
+            raise PermissionError("Cannot resolve the default Outlook store for folder discovery.")
+        stores = [default_store]
 
-    def _walk(folder, current_depth: int, store_key: str):
+    selected_store = stores[0]
+    selected_display = str(getattr(selected_store, "DisplayName", "") or "").strip()
+    if store_name and selected_display.lower() != store_name.strip().lower():
+        raise PermissionError("store_name is outside the selected Outlook account scope.")
+
+    result: list[dict] = []
+
+    def _walk(folder, current_depth: int) -> None:
         if current_depth <= 0:
             return
         try:
-            for child in folder.Folders:
-                result.append({
-                    "name": child.Name,
-                    "unread_count": getattr(child, "UnReadItemCount", 0),
-                    "item_count": getattr(child, "Items", None) and child.Items.Count or 0,
-                })
-                if child.Name:
-                    new_cache[f"{store_key}/{child.Name.lower()}"] = child
-                _walk(child, current_depth - 1, store_key)
+            children = folder.Folders
         except Exception:
-            pass
-
-    for store in mapi.Stores:
-        if store_name and store.DisplayName.lower() != store_name.lower():
-            continue
+            return
         try:
-            store_key = getattr(store, "DisplayName", "Unknown").lower()
-            _walk(store.GetRootFolder(), min(depth, 4), store_key)
-        except Exception:
-            pass
-    if store_name is None and depth == 2 and new_cache:
-        _core._set_folder_cache(new_cache)
+            for child in children:
+                child_name = str(getattr(child, "Name", "") or "").strip()
+                if child_name and ("*" in allowed or child_name.lower() in allowed):
+                    result.append({
+                        "name": child_name,
+                        "unread_count": getattr(child, "UnReadItemCount", 0),
+                        "item_count": getattr(child, "Items", None) and child.Items.Count or 0,
+                    })
+                _walk(child, current_depth - 1)
+        except Exception as exc:
+            logger.debug("Skipping inaccessible folder during scoped discovery: %s", exc)
+
+    try:
+        root = selected_store.GetRootFolder()
+    except Exception as exc:
+        raise PermissionError("Cannot open the selected Outlook account root folder.") from exc
+    _walk(root, min(depth, 4))
     return result
 
 
