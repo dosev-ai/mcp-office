@@ -5,9 +5,21 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
+from fastmcp.exceptions import ToolError
 
-from mailmcp import _calendar, _core, _mail_calendar, _message_fetch, _message_save, _tasks
-from mailmcp import _folders
+from mailmcp import (
+    _calendar,
+    _categories,
+    _context,
+    _core,
+    _folders,
+    _mail_calendar,
+    _message_fetch,
+    _message_save,
+    _messages,
+    _tasks,
+    _tools,
+)
 
 
 def test_config_rejects_negative_limits_and_malformed_domains(monkeypatch):
@@ -147,3 +159,91 @@ def test_meeting_restrict_failure_does_not_return_arbitrary_mail(monkeypatch):
 
     with pytest.raises(RuntimeError, match="no unfiltered messages"):
         _tasks.list_meeting_requests()
+
+
+def test_mail_context_restrict_failure_does_not_return_unfiltered_messages(monkeypatch):
+    _core.set_config(_core.OutlookConfig(allowlist_folders=["Inbox"]))
+    items = SimpleNamespace(
+        Sort=Mock(),
+        Restrict=Mock(side_effect=RuntimeError("synthetic restrict failure")),
+    )
+    monkeypatch.setattr(
+        _context,
+        "_folder_by_name_for_account",
+        lambda *args, **kwargs: SimpleNamespace(Items=items),
+    )
+
+    with pytest.raises(RuntimeError, match="no unfiltered messages"):
+        _context.get_mail_context(
+            folder="Inbox",
+            date_range={"since": "2026-09-01"},
+        )
+
+
+def test_search_matches_raw_headers_before_redacting_output(monkeypatch):
+    _core.set_config(_core.OutlookConfig(
+        allowlist_folders=["Inbox"],
+        redact_mode="emails",
+    ))
+    message = SimpleNamespace(
+        EntryID="synthetic-message",
+        Subject="Report for person@example.com",
+        SenderName="Person Example",
+        SenderEmailType="SMTP",
+        SenderEmailAddress="person@example.com",
+        ReceivedTime=None,
+        UnRead=False,
+        Attachments=None,
+        Importance=1,
+        ConversationTopic="Report person@example.com",
+        ConversationID=None,
+        Body="Synthetic body",
+    )
+
+    class Items(list):
+        def Sort(self, *args, **kwargs):
+            return None
+
+    monkeypatch.setattr(
+        _messages._folders,
+        "_folder_by_name",
+        lambda _name: SimpleNamespace(Items=Items([message])),
+    )
+
+    result = _messages.search_messages(
+        subject="person@example.com",
+        sender="person@example.com",
+    )
+    assert len(result) == 1
+    assert "person@example.com" not in result[0]["subject"]
+    assert result[0]["sender_email"] == "[email]"
+
+
+def test_category_restrict_failure_does_not_return_unfiltered_messages(monkeypatch):
+    _core.set_config(_core.OutlookConfig(allowlist_folders=["Inbox"]))
+    items = SimpleNamespace(
+        Sort=Mock(),
+        Restrict=Mock(side_effect=RuntimeError("synthetic restrict failure")),
+    )
+    folder = SimpleNamespace(Items=items)
+    monkeypatch.setattr(
+        _categories,
+        "_mapi",
+        lambda: SimpleNamespace(GetDefaultFolder=lambda _: folder),
+    )
+
+    with pytest.raises(RuntimeError, match="no unfiltered messages"):
+        _categories.get_messages_by_category("Synthetic")
+
+
+def test_timeout_translation_preserves_guidance_without_raw_exception_detail():
+    def _raise_timeout():
+        raise TimeoutError("secret synthetic timeout detail")
+
+    with pytest.raises(ToolError) as exc_info:
+        _tools._safe(_raise_timeout)
+
+    message = str(exc_info.value)
+    assert "Retry" in message
+    assert "open Outlook manually" in message
+    assert "secret synthetic timeout detail" not in message
