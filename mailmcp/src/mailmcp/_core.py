@@ -15,6 +15,7 @@ _DOMAIN_ALLOWLIST_RE = re.compile(
     r"^(?=.{1,253}\Z)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\Z",
     re.IGNORECASE,
 )
+_REDACT_ORDER: list[str] = ["none", "emails", "emails+domains"]
 
 
 def _parse_nonnegative_int(raw: str, key: str) -> int:
@@ -39,6 +40,29 @@ def _parse_domain_list(raw: str, key: str = "OUTLOOK_ALLOWLIST_DOMAINS") -> list
     return list(dict.fromkeys(parts))
 
 
+def _parse_bool_literal(raw: str, key: str) -> bool:
+    normalized = raw.strip().lower()
+    if normalized == "true":
+        return True
+    if normalized == "false":
+        return False
+    raise ValueError(f"{key} must be 'true' or 'false'.")
+
+
+def _parse_global_bool_env(key: str) -> bool:
+    raw = os.environ.get(key, "false")
+    return _parse_bool_literal(raw if raw.strip() else "false", key)
+
+
+def _parse_redact_mode(raw: str, key: str) -> str:
+    normalized = raw.strip().lower()
+    if normalized not in _REDACT_ORDER:
+        raise ValueError(
+            f"{key} must be one of: {', '.join(_REDACT_ORDER)}."
+        )
+    return normalized
+
+
 @dataclass
 class OutlookConfig:
     allowlist_folders: list[str] = field(default_factory=lambda: ["Inbox", "Contacts"])
@@ -57,6 +81,7 @@ class OutlookConfig:
             value = getattr(self, name)
             if isinstance(value, bool) or not isinstance(value, int) or value < 0:
                 raise ValueError(f"{name} must be a non-negative integer.")
+        self.redact_mode = _parse_redact_mode(self.redact_mode, "redact_mode")
 
     @classmethod
     def from_env(cls) -> "OutlookConfig":
@@ -67,19 +92,16 @@ class OutlookConfig:
             max_items=_parse_nonnegative_int(os.environ.get("OUTLOOK_MAX_ITEMS", "50"), "OUTLOOK_MAX_ITEMS"),
             max_body_chars=_parse_nonnegative_int(os.environ.get("OUTLOOK_MAX_BODY_CHARS", "4000"), "OUTLOOK_MAX_BODY_CHARS"),
             attachment_max_mb=_parse_nonnegative_int(os.environ.get("OUTLOOK_ATTACHMENT_MAX_MB", "10"), "OUTLOOK_ATTACHMENT_MAX_MB"),
-            redact_mode=os.environ.get("OUTLOOK_REDACT_MODE", "none"),
-            enable_write=os.environ.get("OUTLOOK_ENABLE_WRITE", "false").lower() == "true",
-            enable_send=os.environ.get("OUTLOOK_ENABLE_SEND", "false").lower() == "true",
-            enable_delete=os.environ.get("OUTLOOK_ENABLE_DELETE", "false").lower() == "true",
-            enable_rules=os.environ.get("OUTLOOK_ENABLE_RULES", "false").lower() == "true",
+            redact_mode=_parse_redact_mode(os.environ.get("OUTLOOK_REDACT_MODE", "none"), "OUTLOOK_REDACT_MODE"),
+            enable_write=_parse_global_bool_env("OUTLOOK_ENABLE_WRITE"),
+            enable_send=_parse_global_bool_env("OUTLOOK_ENABLE_SEND"),
+            enable_delete=_parse_global_bool_env("OUTLOOK_ENABLE_DELETE"),
+            enable_rules=_parse_global_bool_env("OUTLOOK_ENABLE_RULES"),
             allowlist_domains=_parse_domain_list(
                 os.environ.get("OUTLOOK_ALLOWLIST_DOMAINS", ""),
                 "OUTLOOK_ALLOWLIST_DOMAINS",
             ),
         )
-
-
-_REDACT_ORDER: list[str] = ["none", "emails", "emails+domains"]
 
 
 @dataclass
@@ -104,6 +126,8 @@ class OutlookAccountOverride:
                 isinstance(value, bool) or not isinstance(value, int) or value < 0
             ):
                 raise ValueError(f"{name} must be a non-negative integer when set.")
+        if self.redact_mode is not None:
+            self.redact_mode = _parse_redact_mode(self.redact_mode, "redact_mode")
 
 
 def _parse_folders_env(key: str) -> list[str] | None:
@@ -114,12 +138,10 @@ def _parse_folders_env(key: str) -> list[str] | None:
 
 
 def _parse_bool_env(key: str) -> bool | None:
-    raw = os.environ.get(key, "").strip().lower()
-    if raw == "true":
-        return True
-    if raw == "false":
-        return False
-    return None
+    raw = os.environ.get(key, "").strip()
+    if not raw:
+        return None
+    return _parse_bool_literal(raw, key)
 
 
 def _parse_int_env(key: str) -> int | None:
@@ -129,9 +151,11 @@ def _parse_int_env(key: str) -> int | None:
     return _parse_nonnegative_int(raw, key)
 
 
-def _parse_str_env(key: str) -> str | None:
+def _parse_redact_env(key: str) -> str | None:
     raw = os.environ.get(key, "").strip()
-    return raw if raw else None
+    if not raw:
+        return None
+    return _parse_redact_mode(raw, key)
 
 
 def _parse_account_overrides() -> dict[str, OutlookAccountOverride]:
@@ -151,7 +175,7 @@ def _parse_account_overrides() -> dict[str, OutlookAccountOverride]:
             enable_rules=_parse_bool_env(f"{prefix}ENABLE_RULES"),
             max_items=_parse_int_env(f"{prefix}MAX_ITEMS"),
             max_body_chars=_parse_int_env(f"{prefix}MAX_BODY_CHARS"),
-            redact_mode=_parse_str_env(f"{prefix}REDACT_MODE"),
+            redact_mode=_parse_redact_env(f"{prefix}REDACT_MODE"),
             allowlist_domains=_parse_domain_list(
                 os.environ.get(domain_key, ""), domain_key
             ) or None,
@@ -299,12 +323,8 @@ def _merge_config(g: OutlookConfig, ov: OutlookAccountOverride) -> OutlookConfig
     def _redact_restrict(global_val: str, override_val: str | None) -> str:
         if override_val is None:
             return global_val
-        if global_val not in _REDACT_ORDER:
-            logger.warning("unknown global redact_mode %r, treating as %r", global_val, _REDACT_ORDER[0])
-        if override_val not in _REDACT_ORDER:
-            logger.warning("unknown override redact_mode %r, treating as %r", override_val, _REDACT_ORDER[0])
-        g_idx = _REDACT_ORDER.index(global_val) if global_val in _REDACT_ORDER else 0
-        o_idx = _REDACT_ORDER.index(override_val) if override_val in _REDACT_ORDER else 0
+        g_idx = _REDACT_ORDER.index(global_val)
+        o_idx = _REDACT_ORDER.index(override_val)
         return _REDACT_ORDER[max(g_idx, o_idx)]
 
     return replace(
