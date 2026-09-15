@@ -30,7 +30,6 @@ def compose_mail(to: list[str], subject: str, body: str, html_body: str | None =
     mail.To = "; ".join(to)
     if cc:
         mail.CC = "; ".join(cc)
-    # Outlook can re-render HTMLBody when attachments are added, so attach first.
     for path in validated_attachment_paths:
         mail.Attachments.Add(str(path))
     mail.HTMLBody = html_body if html_body is not None else _text_to_html(body)
@@ -61,6 +60,19 @@ def _validate_optional_recipients(cc: list[str] | None, bcc: list[str] | None, a
     _assert_domains_allowed((cc or []) + (bcc or []), account_email=account_email)
 
 
+def _resolved_reply_addresses(reply) -> list[str]:
+    addresses: list[str] = []
+    for i in range(1, reply.Recipients.Count + 1):
+        recipient = reply.Recipients.Item(i)
+        address_entry = getattr(recipient, "AddressEntry", None)
+        if address_entry is None:
+            raise PermissionError(
+                "Cannot resolve a reply recipient address entry. Draft creation blocked for safety."
+            )
+        addresses.append(_resolve_smtp_from_entry(address_entry))
+    return addresses
+
+
 def reply_all_draft(entry_id: str, body: str, html_body: str | None = None, cc: list[str] | None = None, bcc: list[str] | None = None, account_email: str | None = None, confirm: bool = False) -> dict:
     if not confirm:
         raise ValueError("confirm=True is required to create a reply draft.")
@@ -78,9 +90,7 @@ def reply_all_draft(entry_id: str, body: str, html_body: str | None = None, cc: 
         raise ValueError(f"Cannot determine source folder for entry_id={entry_id!r}") from exc
     _assert_allowed(parent_name, account_email)
     reply = orig.ReplyAll()
-    auto_addrs = []
-    for i in range(1, reply.Recipients.Count + 1):
-        auto_addrs.append(_resolve_smtp_from_entry(reply.Recipients.Item(i)))
+    auto_addrs = _resolved_reply_addresses(reply)
     if auto_addrs:
         _assert_domains_allowed(auto_addrs, account_email=account_email)
     for addr in cc or []:
@@ -120,9 +130,7 @@ def reply_draft(entry_id: str, body: str, html_body: str | None = None, cc: list
         raise ValueError(f"Cannot determine source folder for entry_id={entry_id!r}") from exc
     _assert_allowed(parent_name, account_email)
     reply = msg.Reply()
-    auto_addrs = []
-    for i in range(1, reply.Recipients.Count + 1):
-        auto_addrs.append(_resolve_smtp_from_entry(reply.Recipients.Item(i)))
+    auto_addrs = _resolved_reply_addresses(reply)
     if auto_addrs:
         _assert_domains_allowed(auto_addrs, account_email=account_email)
     for addr in cc or []:
