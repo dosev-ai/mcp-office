@@ -73,6 +73,7 @@ def create_meeting_draft(
     _core._assert_write_enabled(account_email=account_email)
     if not confirm:
         raise ValueError("confirm=True is required to create a meeting draft.")
+    _core._assert_allowed("Calendar", account_email)
     try:
         start_utc = datetime.fromisoformat(start_iso)
         end_utc = datetime.fromisoformat(end_iso)
