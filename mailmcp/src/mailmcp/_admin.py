@@ -7,6 +7,8 @@ from mailmcp import _core
 from mailmcp import _folders
 from mailmcp._core import get_effective_config, _assert_allowed
 
+from mailmcp._item_guards import _assert_mail_item, _folder_identity
+
 logger = logging.getLogger(__name__)
 
 
@@ -21,7 +23,7 @@ def delete_message(
 
     Soft delete (permanent=False, default):
       Calls msg.Delete() which moves the item to Deleted Items. Outlook's
-      default behaviour. Requires confirm=True only.
+      default behaviour. Requires OUTLOOK_ENABLE_DELETE=true and confirm=True.
 
     Hard delete (permanent=True):
       Moves the item to Deleted Items, then immediately calls Delete() on the
@@ -65,6 +67,7 @@ def delete_message(
             raise ValueError(f"Message not found (entry_id={entry_id!r}) — COM HRESULT {hresult:#010x}") from exc
         raise ValueError(f"Message not found (entry_id={entry_id!r})") from exc
 
+    _assert_mail_item(msg)
     _folders._assert_object_belongs_to_account(msg, account_email, object_label="message")
 
     try:
@@ -80,28 +83,21 @@ def delete_message(
         ) from _exc
     _assert_allowed(_parent_name, account_email)  # CBR-002
 
+    # Resolve trash in the source item's store, not the primary mailbox.
+    try:
+        store = _folders._resolve_store_for_object(msg)
+        if store is None:
+            raise PermissionError("Cannot verify the source store for deletion.")
+        deleted_folder = store.GetDefaultFolder(_folders._OL_DELETED_ITEMS)
+        already_in_deleted = _folder_identity(msg.Parent) == _folder_identity(deleted_folder)
+    except Exception as exc:  # noqa: BLE001 - fail closed across the COM boundary
+        raise PermissionError("Cannot verify the Deleted Items boundary.") from exc
+
     if not permanent:
-        # Soft delete: Outlook moves item to Deleted Items automatically
+        if already_in_deleted:
+            raise ValueError("An item already in Deleted Items requires permanent=True to delete.")
         msg.Delete()
         return {"deleted": True, "permanent": False, "entry_id": entry_id}
-
-    # Hard (permanent) delete — two-step to bypass the recycle bin (BLK-05)
-    # BLK-05: use GetDefaultFolder(3) directly, never _assert_allowed
-    if account_email is not None:
-        deleted_folder = _folders._get_deleted_items_folder(account_email=account_email)
-    else:
-        deleted_folder = _folders._get_deleted_items_folder()
-
-    # Check whether the item is already in the Deleted Items folder.
-    # If it is, one Delete() call is sufficient. If not, we must move first
-    # then delete from the destination.
-    already_in_deleted = False
-    try:
-        parent = msg.Parent
-        if parent is not None and parent.EntryID == deleted_folder.EntryID:
-            already_in_deleted = True
-    except Exception:
-        pass  # if we can't determine parent, fall through to Move() path
 
     if already_in_deleted:
         msg.Delete()

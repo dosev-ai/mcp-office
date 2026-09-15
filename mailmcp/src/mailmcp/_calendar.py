@@ -10,11 +10,13 @@ from mailmcp import _folders
 from mailmcp._core import get_config, get_effective_config, _assert_allowed, _EMAIL_VALIDATE_RE
 from mailmcp._folders import _OL_APPOINTMENT_CLASS
 from mailmcp._formatters import _format_outlook_date
+from mailmcp._item_guards import _assert_calendar_item_folder
 
 logger = logging.getLogger(__name__)
 
 
 def list_calendar_events(start: str | None = None, end: str | None = None, top: int | None = None, include_cancelled: bool = False) -> list[dict]:
+    _assert_allowed("Calendar")
     cfg = get_config()
     limit = min(top or cfg.max_items, cfg.max_items)
     now = _dt.now()
@@ -69,25 +71,7 @@ def get_calendar_event(entry_id: str, include_body: bool = False, account_email:
     item_class = getattr(item, "Class", None)
     if item_class != _OL_APPOINTMENT_CLASS:
         raise ValueError(f"Item entry_id={entry_id!r} is not an AppointmentItem (item.Class={item_class!r}, expected {_OL_APPOINTMENT_CLASS}).")
-    if account_email is None:
-        try:
-            parent_name = item.Parent.Name
-            default_cal = mapi.GetDefaultFolder(9).Name
-        except Exception:
-            raise PermissionError("Cannot verify calendar item folder — access denied.") from None
-        if parent_name != default_cal:
-            _assert_allowed(parent_name, account_email)
-    else:
-        try:
-            parent = item.Parent
-            parent_name = parent.Name
-            default_cal = _folders._get_calendar_folder(account_email=account_email)
-            default_cal_id = getattr(default_cal, "EntryID", None)
-            parent_id = getattr(parent, "EntryID", None)
-        except Exception:
-            raise PermissionError("Cannot verify calendar item folder — access denied.") from None
-        if default_cal_id is None or parent_id != default_cal_id:
-            _assert_allowed(parent_name, account_email)
+    _assert_calendar_item_folder(item, account_email)
     return _folders._appointment_to_dict(item, include_body=include_body, account_email=account_email)
 
 
@@ -95,6 +79,12 @@ def update_calendar_event(entry_id: str, subject: str | None = None, start_iso: 
     if not confirm:
         raise ValueError("confirm=True is required to update a calendar event.")
     _core._assert_write_enabled(account_email=account_email)
+    for address in (required_attendees or []) + (optional_attendees or []):
+        if not isinstance(address, str) or not _EMAIL_VALIDATE_RE.match(address):
+            raise ValueError("Invalid attendee email address.")
+    _core._assert_domains_allowed(
+        (required_attendees or []) + (optional_attendees or []), account_email=account_email,
+    )
     mapi = _core._mapi()
     try:
         item = mapi.GetItemFromID(entry_id)
@@ -106,27 +96,7 @@ def update_calendar_event(entry_id: str, subject: str | None = None, start_iso: 
     _folders._assert_object_belongs_to_account(item, account_email, object_label="calendar item")
     if getattr(item, "Class", None) != _OL_APPOINTMENT_CLASS:
         raise ValueError(f"Item entry_id={entry_id!r} is not an AppointmentItem.")
-    if account_email is None:
-        try:
-            parent_name = item.Parent.Name
-            default_cal = mapi.GetDefaultFolder(9).Name
-        except Exception:
-            raise PermissionError("Cannot verify calendar item folder — access denied.") from None
-        if parent_name != default_cal:
-            _assert_allowed(parent_name, account_email)
-    else:
-        try:
-            parent = item.Parent
-            parent_name = parent.Name
-            default_cal = _folders._get_calendar_folder(account_email=account_email)
-            default_cal_id = getattr(default_cal, "EntryID", None)
-            parent_id = getattr(parent, "EntryID", None)
-        except Exception:
-            raise PermissionError("Cannot verify calendar item folder — access denied.") from None
-        if default_cal_id is None or parent_id != default_cal_id:
-            _assert_allowed(parent_name, account_email)
-    if subject is not None:
-        item.Subject = subject
+    _assert_calendar_item_folder(item, account_email)
     if (start_iso is not None) != (end_iso is not None):
         try:
             raw_start = item.Start
@@ -161,6 +131,8 @@ def update_calendar_event(entry_id: str, subject: str | None = None, start_iso: 
             end_check = end_check.replace(tzinfo=_tz.utc)
         if end_check <= start_check:
             raise ValueError("'end_iso' must be after 'start_iso'.")
+    if subject is not None:
+        item.Subject = subject
     if start_iso is not None:
         start_dt = _dt.fromisoformat(start_iso)
         if start_dt.tzinfo is None:
@@ -178,9 +150,6 @@ def update_calendar_event(entry_id: str, subject: str | None = None, start_iso: 
     if all_day_event is not None:
         item.AllDayEvent = all_day_event
     if required_attendees is not None or optional_attendees is not None:
-        for addr in (required_attendees or []) + (optional_attendees or []):
-            if not _EMAIL_VALIDATE_RE.match(addr):
-                raise ValueError(f"Invalid email address: {addr!r}")
         try:
             while item.Recipients.Count > 0:
                 item.Recipients.Remove(1)

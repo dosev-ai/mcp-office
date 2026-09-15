@@ -10,6 +10,8 @@ from mailmcp._formatters import _fmt_date, _resolve_sender_email
 from mailmcp._folders import _FLAG_STATUS_MAP
 from mailmcp._mail_calendar import _FB_STATUS as _FB_STATUS, check_freebusy as check_freebusy, create_meeting_draft as create_meeting_draft
 
+from mailmcp._item_guards import _assert_draft_item, _assert_mail_item
+
 logger = logging.getLogger(__name__)
 _MAX_THREAD_SCAN_ITEMS = 500
 
@@ -31,12 +33,7 @@ def send_mail(entry_id: str, confirm: bool = False, account_email: str | None = 
         msg = mapi.GetItemFromID(entry_id)
     except Exception as exc:
         raise ValueError(f"Message not found (entry_id={entry_id!r})") from exc
-    _folders._assert_object_belongs_to_account(msg, account_email, object_label="message")
-    try:
-        parent_name = msg.Parent.Name
-    except Exception as exc:
-        raise ValueError(f"Cannot determine source folder for entry_id={entry_id!r}") from exc
-    _assert_allowed(parent_name, account_email)
+    _assert_draft_item(msg, account_email)
     recipients = []
     for i in range(1, msg.Recipients.Count + 1):
         recipients.append(_resolve_smtp_from_entry(msg.Recipients.Item(i).AddressEntry))
@@ -55,6 +52,7 @@ def move_message(entry_id: str, target_folder: str, confirm: bool = False, accou
         item = mapi.GetItemFromID(entry_id)
     except Exception as exc:
         raise ValueError(f"Message not found (entry_id={entry_id!r})") from exc
+    _assert_mail_item(item)
     _folders._assert_object_belongs_to_account(item, account_email, object_label="message")
     try:
         _assert_allowed(item.Parent.Name, account_email)
@@ -78,6 +76,7 @@ def flag_message(entry_id: str, flag_status: str, confirm: bool = False, account
         item = mapi.GetItemFromID(entry_id)
     except Exception as exc:
         raise ValueError(f"Message not found (entry_id={entry_id!r})") from exc
+    _assert_mail_item(item)
     _folders._assert_object_belongs_to_account(item, account_email, object_label="message")
     _assert_allowed(item.Parent.Name, account_email)
     item.FlagStatus = _FLAG_STATUS_MAP[status]
@@ -94,6 +93,7 @@ def mark_read(entry_id: str, read: bool = True, confirm: bool = False, account_e
         item = mapi.GetItemFromID(entry_id)
     except Exception as exc:
         raise ValueError(f"Message not found (entry_id={entry_id!r})") from exc
+    _assert_mail_item(item)
     _folders._assert_object_belongs_to_account(item, account_email, object_label="message")
     _assert_allowed(item.Parent.Name, account_email)
     item.UnRead = not read
@@ -169,6 +169,7 @@ def mark_junk(entry_id: str, confirm: bool = False, account_email: str | None = 
         item = mapi.GetItemFromID(entry_id)
     except Exception as exc:
         raise ValueError(f"Message not found (entry_id={entry_id!r})") from exc
+    _assert_mail_item(item)
     _folders._assert_object_belongs_to_account(item, account_email, object_label="message")
     _assert_allowed(item.Parent.Name, account_email)
     junk = _folders._get_junk_folder(account_email=account_email)
@@ -232,12 +233,16 @@ def create_forwarding_rule(forward_to: str, folder_name: str, subject_filter: st
         rule = rules.Create(rule_name, 0)
         target = _folders._folder_by_name_for_account(folder_name, account_email=account_email) if account_email is not None else _folders._folder_by_name(folder_name)
         condition = rule.Conditions.FolderCondition
-        condition.Folders.Add(target); condition.Enabled = True
+        condition.Folders.Add(target)
+        condition.Enabled = True
         if subject_filter:
             subject_condition = rule.Conditions.Subject
-            subject_condition.Text = [subject_filter]; subject_condition.Enabled = True
+            subject_condition.Text = [subject_filter]
+            subject_condition.Enabled = True
         action = rule.Actions.ForwardTo
-        recipient = action.Recipients.Add(forward_to); recipient.Resolve(); action.Enabled = True
+        recipient = action.Recipients.Add(forward_to)
+        recipient.Resolve()
+        action.Enabled = True
         rules.Save(True)
     except Exception as exc:
         raise RuntimeError(f"Cannot create forwarding rule: {exc}") from exc
@@ -257,7 +262,8 @@ def delete_forwarding_rule(rule_id: str, confirm: bool = False, account_email: s
         raise ValueError(f"rule_id {rule_id!r} out of range (1–{rules.Count}).")
     try:
         rule_name = str(rules.Item(idx).Name or "")
-        rules.Remove(idx); rules.Save(True)
+        rules.Remove(idx)
+        rules.Save(True)
     except Exception as exc:
         raise RuntimeError(f"Cannot delete rule {rule_id!r}: {exc}") from exc
     redacted = _redact(rule_name, account_email=account_email)

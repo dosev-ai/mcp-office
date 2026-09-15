@@ -171,15 +171,10 @@ def _store_matches_account(store: Any, account_email: str, account_index: dict[s
     normalized_account = _normalized_account_email(account_email)
     if normalized_account is None:
         return True
-    store_key = _normalized_store_key(store)
+    # Display labels are not account ownership evidence. A verifiable
+    # DeliveryStore ID is required for every explicitly scoped operation.
     store_id = _store_id(store)
-    if store_key == normalized_account:
-        return True
-    if store_id and store_id in account_index["store_ids_by_smtp"].get(normalized_account, set()):
-        return True
-    if store_key in account_index["store_keys_by_smtp"].get(normalized_account, set()):
-        return True
-    return account_index["smtp_by_display"].get(store_key) == normalized_account
+    return bool(store_id and store_id in account_index["store_ids_by_smtp"].get(normalized_account, set()))
 
 
 def _find_store_for_account(account_email: str, mapi: Any | None = None) -> Any:
@@ -271,7 +266,7 @@ def _folder_by_name_for_account(folder_name: str, account_email: str | None = No
         if not _store_matches_account(store, normalized_account, account_index):
             continue
         matched_store = True
-        store_key = _normalized_store_key(store)
+        store_key = f"id:{_store_id(store)}"
         if cached_snapshot is not None:
             cached_folder = cached_snapshot.get(f"{store_key}/{normalized_folder_name}")
             if cached_folder is not None:

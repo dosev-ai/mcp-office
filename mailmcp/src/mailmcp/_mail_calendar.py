@@ -16,11 +16,21 @@ def check_freebusy(emails: list[str], start_iso: str, end_iso: str, interval_min
         end_dt = datetime.fromisoformat(end_iso)
     except ValueError as exc:
         raise ValueError(f"Invalid datetime format: {exc}. Use ISO-8601, e.g. '2026-02-24T09:00:00'") from exc
-    if interval_minutes <= 0:
-        raise ValueError("interval_minutes must be > 0")
+    if isinstance(interval_minutes, bool) or not isinstance(interval_minutes, int) or interval_minutes <= 0:
+        raise ValueError("interval_minutes must be a positive integer")
+    try:
+        duration = (end_dt - start_dt).total_seconds()
+    except TypeError as exc:
+        raise ValueError("start_iso and end_iso must use compatible timezones") from exc
+    if duration <= 0:
+        raise ValueError("end_iso must be after start_iso")
+    if any(not isinstance(email, str) for email in emails):
+        raise ValueError("Each email must be a string.")
+    valid_addresses = [email for email in emails if _EMAIL_VALIDATE_RE.match(email)]
+    _assert_domains_allowed(valid_addresses)
     mapi = _core._mapi()
     results = []
-    total_minutes = int((end_dt - start_dt).total_seconds() / 60)
+    total_minutes = int(duration / 60)
     num_slots = max(1, total_minutes // interval_minutes)
     for email in emails:
         if not _EMAIL_VALIDATE_RE.match(email):
@@ -40,7 +50,7 @@ def check_freebusy(emails: list[str], start_iso: str, end_iso: str, interval_min
                 fb_index = offset_slots + i
                 ch = fb_str[fb_index] if fb_index < len(fb_str) else "0"
                 slot_start = start_dt + timedelta(minutes=i * interval_minutes)
-                slot_end = slot_start + timedelta(minutes=interval_minutes)
+                slot_end = min(end_dt, slot_start + timedelta(minutes=interval_minutes))
                 slots.append({"start": slot_start.isoformat(), "end": slot_end.isoformat(), "status": _FB_STATUS.get(ch, f"?({ch})")})
             results.append({"email": _redact(email), "name": _redact(recip.Name), "status": "ok", "slots": slots})
         except Exception as exc:
@@ -74,6 +84,8 @@ def create_meeting_draft(
         end_local = end_utc.astimezone()
     except ValueError as exc:
         raise ValueError(f"Invalid datetime format: {exc}. Use ISO-8601, e.g. '2026-02-24T09:00:00'") from exc
+    if end_utc <= start_utc:
+        raise ValueError("end_iso must be after start_iso.")
     for addr in required:
         if not _EMAIL_VALIDATE_RE.match(addr):
             raise ValueError(f"Invalid email address: {addr!r}")

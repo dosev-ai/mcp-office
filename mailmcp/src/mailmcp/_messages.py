@@ -4,10 +4,10 @@ from __future__ import annotations
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import timedelta
 import logging
+import math
 import os
 import time
 
-from mailmcp import _core
 from mailmcp import _folders
 from mailmcp._core import get_config, get_effective_config, _assert_allowed
 from mailmcp._formatters import _msg_header, _parse_date, _format_outlook_date
@@ -105,7 +105,7 @@ def list_messages(folder_name: str = "Inbox", top: int | None = None, unread_onl
             items = items.Restrict(restriction)
             items.Sort("[ReceivedTime]", sort_desc)
         except Exception as exc:
-            logger.warning("Restrict failed (%s); falling back to unfiltered scan", exc)
+            raise RuntimeError("Outlook could not apply the requested message filter; no unfiltered results returned.") from exc
     result = []
     count = 0
     for msg in items:
@@ -162,6 +162,8 @@ def search_all_folders(subject: str | None = None, sender: str | None = None, bo
 
 
 def search_all_folders_detailed(subject: str | None = None, sender: str | None = None, body_contains: str | None = None, query: str | None = None, top: int | None = None, scan_limit: int | None = None, timeout_seconds: int = 30) -> dict:
+    if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)) or not math.isfinite(timeout_seconds) or timeout_seconds <= 0:
+        raise ValueError("timeout_seconds must be a positive finite number.")
     cfg = get_config()
     limit = _resolve_top_limit(top, cfg.max_items)
     if query and not any([subject, sender, body_contains]):
@@ -175,13 +177,8 @@ def search_all_folders_detailed(subject: str | None = None, sender: str | None =
     partial = False
     any_folder_capped = False
     start_time = time.monotonic()
-    collected_count = 0
     folders_searched = 0
     from mailmcp import outlook_com as ol
-    try:
-        _core._get_outlook()
-    except Exception:
-        logger.warning("COM warmup failed — search_all_folders may be slow or fail")
     executor = ThreadPoolExecutor(max_workers=max_workers)
     future_to_folder = {}
     try:
@@ -189,28 +186,24 @@ def search_all_folders_detailed(subject: str | None = None, sender: str | None =
             executor.submit(ol.search_all_folders_worker, folder_name, subject, sender, body_contains, limit, scan_limit=scan_limit): folder_name
             for folder_name in cfg.allowlist_folders
         }
-        for future in as_completed(future_to_folder):
+        for future in as_completed(future_to_folder, timeout=max(0.0, timeout_seconds - (time.monotonic() - start_time))):
             folder_name = future_to_folder[future]
             try:
                 results = future.result(timeout=0)
                 folder_results.append(results)
-                collected_count += len(results)
                 if getattr(results, "scan_capped", False):
                     any_folder_capped = True
             except Exception as exc:
                 folder_errors.append({"folder_name": folder_name, "error": str(exc)})
             folders_searched += 1
-            if collected_count >= limit:
-                for pending in future_to_folder:
-                    pending.cancel()
-                break
-            if time.monotonic() - start_time >= timeout_seconds:
-                partial = True
-                for pending in future_to_folder:
-                    pending.cancel()
-                break
+    except TimeoutError:
+        partial = True
     finally:
+        for pending in future_to_folder:
+            if not pending.done():
+                pending.cancel()
         executor.shutdown(wait=False, cancel_futures=True)
+    partial = partial or bool(folder_errors) or any_folder_capped or folders_searched < len(future_to_folder)
     folder_errors.sort(key=lambda item: folder_order.get(item["folder_name"], len(folder_order)))
     if folder_errors and len(folder_errors) == len(cfg.allowlist_folders):
         detail = "; ".join(f"{item['folder_name']}: {item['error']}" for item in folder_errors)

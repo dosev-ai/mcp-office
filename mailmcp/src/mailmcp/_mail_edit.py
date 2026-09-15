@@ -6,7 +6,7 @@ import logging
 from mailmcp import _core
 from mailmcp._core import _EMAIL_VALIDATE_RE, _assert_domains_allowed
 from mailmcp._formatters import _text_to_html
-from mailmcp import _folders
+from mailmcp._item_guards import _assert_draft_item
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,7 @@ def edit_draft(
         if hresult is not None:
             raise ValueError(f"Draft not found (entry_id={entry_id!r}) — COM HRESULT {hresult:#010x}") from exc
         raise ValueError(f"Draft not found (entry_id={entry_id!r})") from exc
-    _folders._assert_object_belongs_to_account(mail, account_email, object_label="draft")
+    _assert_draft_item(mail, account_email)
     if subject is not None:
         mail.Subject = subject
     if html_body is not None:
@@ -62,4 +62,4 @@ def edit_draft(
     if bcc is not None:
         mail.BCC = "; ".join(bcc)
     mail.Save()
-    return {"status": "draft_updated", "entry_id": mail.EntryID, "subject": mail.Subject}
+    return {"status": "draft_updated", "entry_id": mail.EntryID, "subject": _core._redact(mail.Subject, account_email)}

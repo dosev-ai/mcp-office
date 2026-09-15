@@ -91,7 +91,7 @@ def create_task(subject: str, body: str | None = None, due_date: str | None = No
         task.Save()
         raw_due = getattr(task, "DueDate", None)
         due_iso = str(raw_due)[:10] if raw_due and str(raw_due) != "4501-01-01 00:00:00" else None
-        return {"status": "created", "entry_id": task.EntryID, "subject": task.Subject, "due_date": due_iso, "priority": priority_lower}
+        return {"status": "created", "entry_id": task.EntryID, "subject": _redact(str(task.Subject or ""), account_email), "due_date": due_iso, "priority": priority_lower}
     except (ValueError, TypeError):
         raise
     except Exception as exc:
@@ -182,7 +182,8 @@ def respond_to_meeting(entry_id: str, response: str, confirm: bool = False, acco
         cfg = get_effective_config(account_email)
         sent = False
         if cfg.enable_send and response_item is not None:
-            response_item.Send(); sent = True
+            response_item.Send()
+            sent = True
         elif response_item is not None:
             response_item.Save()
     except Exception as exc:
@@ -271,4 +272,12 @@ def extract_tasks_from_message(entry_id: str, auto_create: bool = False, confirm
         candidates = candidates[:cfg.max_items]
         for candidate in candidates:
             created.append(create_task(subject=candidate['title'], due_date=candidate['due_date'], priority=candidate['priority'], confirm=True, account_email=account_email))
-    return {'candidates': candidates, 'created': created, 'source_entry_id': entry_id, 'source_subject': subject}
+    visible_candidates = [{**row, 'title': _redact(row['title'], account_email)} for row in candidates]
+    visible_created = [
+        {**row, 'subject': _redact(str(row.get('subject') or ''), account_email)}
+        for row in created
+    ]
+    return {
+        'candidates': visible_candidates, 'created': visible_created,
+        'source_entry_id': entry_id, 'source_subject': _redact(subject, account_email),
+    }

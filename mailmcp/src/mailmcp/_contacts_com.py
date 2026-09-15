@@ -11,6 +11,7 @@ from typing import Any
 from mailmcp import _core, _folders
 from mailmcp._core import get_effective_config
 from mailmcp._formatters import _sql_escape
+from mailmcp._item_guards import _assert_default_item_folder
 
 logger = logging.getLogger(__name__)
 
@@ -18,14 +19,14 @@ logger = logging.getLogger(__name__)
 _OL_CONTACT_CLASS = 40
 
 
-def _contact_to_dict(c: Any) -> dict:
+def _contact_to_dict(c: Any, account_email: str | None = None) -> dict:
     """Map an Outlook ContactItem COM object to a plain dict.
 
     Uses exact COM property names (SPEC-GAP-1):
       BusinessTelephoneNumber — not "BusinessTelephone"
       MobileTelephoneNumber   — not "MobilePhone"
     """
-    return {
+    result = {
         "entry_id": getattr(c, "EntryID", None),
         "full_name": getattr(c, "FullName", "") or "",
         "first_name": getattr(c, "FirstName", "") or "",
@@ -37,6 +38,10 @@ def _contact_to_dict(c: Any) -> dict:
         "job_title": getattr(c, "JobTitle", "") or "",
         "city": getattr(c, "BusinessAddressCity", "") or "",
         "country": getattr(c, "BusinessAddressCountry", "") or "",
+    }
+    return {
+        key: _core._redact(value, account_email) if key != "entry_id" and isinstance(value, str) else value
+        for key, value in result.items()
     }
 
 
@@ -74,7 +79,7 @@ def list_contacts(
         if len(results) >= cap:
             break
         try:
-            results.append(_contact_to_dict(c))
+            results.append(_contact_to_dict(c, account_email))
         except Exception:
             logger.warning("Skipping malformed contact item with EntryID=%r", getattr(c, "EntryID", None))
     return results
@@ -133,7 +138,7 @@ def search_contacts(
         if len(results) >= cap:
             break
         try:
-            results.append(_contact_to_dict(c))
+            results.append(_contact_to_dict(c, account_email))
         except Exception:
             logger.warning(
                 "Skipping malformed contact item with EntryID=%r",
@@ -164,4 +169,5 @@ def get_contact(entry_id: str, account_email: str | None = None) -> dict:
             f"Item {entry_id!r} is not a Contact "
             f"(Class={getattr(item, 'Class', None)}, expected {_OL_CONTACT_CLASS})."
         )
-    return _contact_to_dict(item)
+    _assert_default_item_folder(item, _folders._OL_CONTACTS, "Contacts", account_email)
+    return _contact_to_dict(item, account_email)

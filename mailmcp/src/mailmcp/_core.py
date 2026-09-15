@@ -145,7 +145,7 @@ def _get_folder_cache_ttl() -> float:
         logger.warning("Invalid OUTLOOK_FOLDER_CACHE_TTL_SECONDS=%r, using 300", raw)
         return 300.0
     if val < 0:
-        logger.warning("Negative OUTLOOK_FOLDER_CACHE_TTL_SECONDS=%r, clamping to 0", val)
+        logger.warning("Negative OUTLOOK_FOLDER_CACHE_TTL_SECONDS=%r, clamping to 0", raw)
         return 0.0
     return val
 
@@ -241,7 +241,7 @@ def _merge_config(g: OutlookConfig, ov: OutlookAccountOverride) -> OutlookConfig
             global_dom_lower = {d.lower() for d in g.allowlist_domains}
             merged_domains = [d for d in ov.allowlist_domains if d.lower() in global_dom_lower]
             if not merged_domains and ov.allowlist_domains:
-                merged_domains = list(g.allowlist_domains)
+                raise PermissionError("Global and account domain allowlists have no permitted intersection.")
     else:
         merged_domains = g.allowlist_domains
 
@@ -380,9 +380,12 @@ def _assert_write_enabled(account_email: str | None = None) -> None:
 
 
 def reload_config() -> dict:
-    global _config, _startup_config
+    global _config, _account_overrides
+    from mailmcp._config_policy import _assert_no_scope_expansion
+
     get_config()
     new_cfg = OutlookConfig.from_env()
+    _new_acct_ovs = _parse_account_overrides()
 
     if _startup_config is not None:
         if new_cfg.enable_write and not _startup_config.enable_write:
@@ -412,13 +415,14 @@ def reload_config() -> dict:
                 )
                 new_cfg = replace(new_cfg, allowlist_domains=list(_startup_config.allowlist_domains))
 
+        _assert_no_scope_expansion(_startup_config, new_cfg)
         if _startup_account_overrides is not None:
-            _new_acct_ovs = _parse_account_overrides()
             _bool_flags = ("enable_write", "enable_send", "enable_delete", "enable_rules")
             for _email, _startup_ov in _startup_account_overrides.items():
                 _startup_eff = _merge_config(_startup_config, _startup_ov)
                 _new_ov = _new_acct_ovs.get(_email)
                 _new_eff = _merge_config(new_cfg, _new_ov) if _new_ov is not None else new_cfg
+                _assert_no_scope_expansion(_startup_eff, _new_eff)
                 for _flag in _bool_flags:
                     if getattr(_new_eff, _flag) and not getattr(_startup_eff, _flag):
                         raise PermissionError(
@@ -426,7 +430,7 @@ def reload_config() -> dict:
                         )
 
     _config = new_cfg
-    _load_account_overrides()
+    _account_overrides = _new_acct_ovs
     _invalidate_folder_cache()
     logger.info(
         "reload_config applied: folders=%s max_items=%d write=%s send=%s delete=%s rules=%s",
