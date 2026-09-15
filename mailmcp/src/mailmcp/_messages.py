@@ -9,7 +9,7 @@ import os
 import time
 
 from mailmcp import _folders
-from mailmcp._core import get_config, get_effective_config, _assert_allowed
+from mailmcp._core import get_effective_config, _assert_allowed
 from mailmcp._formatters import _msg_header, _parse_date, _format_outlook_date, _resolve_sender_email
 
 from mailmcp._message_fetch import health, list_accounts, list_folders, get_message  # noqa: F401
@@ -74,6 +74,22 @@ def _merge_search_all_folders_results(folder_results: list[list[dict]], allowlis
         if len(deduped) >= limit:
             break
     return deduped
+
+
+def _all_folder_search_names(account_email: str | None) -> list[str]:
+    cfg = get_effective_config(account_email)
+    if "*" not in cfg.allowlist_folders:
+        return list(cfg.allowlist_folders)
+    discovered = list_folders(depth=2, account_email=account_email)
+    names: list[str] = []
+    seen: set[str] = set()
+    for row in discovered:
+        name = str(row.get("name") or "").strip()
+        key = name.lower()
+        if name and key not in seen:
+            seen.add(key)
+            names.append(name)
+    return names
 
 
 def list_messages(folder_name: str = "Inbox", top: int | None = None, unread_only: bool = False, since: str | None = None, until: str | None = None, has_attachments: bool | None = None, sort_desc: bool = True, account_email: str | None = None) -> list[dict]:
@@ -161,23 +177,26 @@ def search_messages(folder_name: str = "Inbox", subject: str | None = None, send
     return result
 
 
-def search_all_folders(subject: str | None = None, sender: str | None = None, body_contains: str | None = None, query: str | None = None, top: int | None = None, scan_limit: int | None = None) -> list[dict]:
-    return search_all_folders_detailed(subject=subject, sender=sender, body_contains=body_contains, query=query, top=top, scan_limit=scan_limit)["messages"]
+def search_all_folders(subject: str | None = None, sender: str | None = None, body_contains: str | None = None, query: str | None = None, top: int | None = None, scan_limit: int | None = None, account_email: str | None = None) -> list[dict]:
+    return search_all_folders_detailed(subject=subject, sender=sender, body_contains=body_contains, query=query, top=top, scan_limit=scan_limit, account_email=account_email)["messages"]
 
 
-def search_all_folders_detailed(subject: str | None = None, sender: str | None = None, body_contains: str | None = None, query: str | None = None, top: int | None = None, scan_limit: int | None = None, timeout_seconds: int = 30) -> dict:
+def search_all_folders_detailed(subject: str | None = None, sender: str | None = None, body_contains: str | None = None, query: str | None = None, top: int | None = None, scan_limit: int | None = None, timeout_seconds: int = 30, account_email: str | None = None) -> dict:
     if isinstance(timeout_seconds, bool) or not isinstance(timeout_seconds, (int, float)) or not math.isfinite(timeout_seconds) or timeout_seconds <= 0:
         raise ValueError("timeout_seconds must be a positive finite number.")
-    cfg = get_config()
+    cfg = get_effective_config(account_email)
     limit = _resolve_top_limit(top, cfg.max_items)
     if query and not any([subject, sender, body_contains]):
         body_contains = query
     if not any([subject, sender, body_contains]):
         raise ValueError("At least one search filter (query, subject, sender, body_contains) must be provided.")
+    folder_names = _all_folder_search_names(account_email)
+    if not folder_names:
+        return {"messages": [], "errors": [], "partial_results": False, "any_folder_capped": False, "folders_searched": 0, "folders_total": 0}
     folder_results: list[list[dict]] = []
     folder_errors: list[dict[str, str]] = []
-    folder_order = {folder_name: index for index, folder_name in enumerate(cfg.allowlist_folders)}
-    max_workers = _search_all_folders_max_workers(len(cfg.allowlist_folders))
+    folder_order = {folder_name: index for index, folder_name in enumerate(folder_names)}
+    max_workers = _search_all_folders_max_workers(len(folder_names))
     partial = False
     any_folder_capped = False
     start_time = time.monotonic()
@@ -187,8 +206,8 @@ def search_all_folders_detailed(subject: str | None = None, sender: str | None =
     future_to_folder = {}
     try:
         future_to_folder = {
-            executor.submit(ol.search_all_folders_worker, folder_name, subject, sender, body_contains, limit, scan_limit=scan_limit): folder_name
-            for folder_name in cfg.allowlist_folders
+            executor.submit(ol.search_all_folders_worker, folder_name, subject, sender, body_contains, limit, scan_limit=scan_limit, account_email=account_email): folder_name
+            for folder_name in folder_names
         }
         for future in as_completed(future_to_folder, timeout=max(0.0, timeout_seconds - (time.monotonic() - start_time))):
             folder_name = future_to_folder[future]
@@ -209,11 +228,11 @@ def search_all_folders_detailed(subject: str | None = None, sender: str | None =
         executor.shutdown(wait=False, cancel_futures=True)
     partial = partial or bool(folder_errors) or any_folder_capped or folders_searched < len(future_to_folder)
     folder_errors.sort(key=lambda item: folder_order.get(item["folder_name"], len(folder_order)))
-    if folder_errors and len(folder_errors) == len(cfg.allowlist_folders):
+    if folder_errors and len(folder_errors) == len(folder_names):
         detail = "; ".join(f"{item['folder_name']}: {item['error']}" for item in folder_errors)
         raise RuntimeError(f"search_all_folders failed for all folders: {detail}")
     return {
-        "messages": _merge_search_all_folders_results(folder_results, cfg.allowlist_folders, limit),
+        "messages": _merge_search_all_folders_results(folder_results, folder_names, limit),
         "errors": folder_errors,
         "partial_results": partial,
         "any_folder_capped": any_folder_capped,
