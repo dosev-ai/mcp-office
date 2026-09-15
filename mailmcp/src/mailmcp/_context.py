@@ -106,10 +106,11 @@ def get_mail_context(
         if len(messages) >= limit:
             break
         try:
-            hdr = _msg_header(msg, account_email=account_email)
             if subject_lower is not None:
-                if subject_lower not in (hdr.get("subject") or "").lower():
+                raw_subject = str(getattr(msg, "Subject", "") or "")
+                if subject_lower not in raw_subject.lower():
                     continue
+            hdr = _msg_header(msg, account_email=account_email)
             body_raw: str = ""
             try:
                 body_raw = getattr(msg, "Body", "") or ""
