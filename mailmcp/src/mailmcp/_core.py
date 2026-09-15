@@ -11,6 +11,33 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+_DOMAIN_ALLOWLIST_RE = re.compile(
+    r"^(?=.{1,253}\Z)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\Z",
+    re.IGNORECASE,
+)
+
+
+def _parse_nonnegative_int(raw: str, key: str) -> int:
+    try:
+        value = int(raw)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{key} must be a non-negative integer.") from exc
+    if value < 0:
+        raise ValueError(f"{key} must be a non-negative integer.")
+    return value
+
+
+def _parse_domain_list(raw: str, key: str = "OUTLOOK_ALLOWLIST_DOMAINS") -> list[str]:
+    raw = raw.strip()
+    if not raw:
+        return []
+    parts = [part.strip().lower() for part in raw.split(",")]
+    if any(not part or not _DOMAIN_ALLOWLIST_RE.fullmatch(part) for part in parts):
+        raise ValueError(
+            f"{key} contains an invalid domain allowlist. Use comma-separated DNS domain names."
+        )
+    return list(dict.fromkeys(parts))
+
 
 @dataclass
 class OutlookConfig:
@@ -25,21 +52,30 @@ class OutlookConfig:
     enable_rules: bool = False
     allowlist_domains: list[str] = field(default_factory=list)
 
+    def __post_init__(self) -> None:
+        for name in ("max_items", "max_body_chars", "attachment_max_mb"):
+            value = getattr(self, name)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise ValueError(f"{name} must be a non-negative integer.")
+
     @classmethod
     def from_env(cls) -> "OutlookConfig":
         raw_folders = os.environ.get("OUTLOOK_ALLOWLIST_FOLDERS", "Inbox,Contacts")
         folders = [f.strip() for f in raw_folders.split(",") if f.strip()]
         return cls(
             allowlist_folders=folders,
-            max_items=int(os.environ.get("OUTLOOK_MAX_ITEMS", "50")),
-            max_body_chars=int(os.environ.get("OUTLOOK_MAX_BODY_CHARS", "4000")),
-            attachment_max_mb=int(os.environ.get("OUTLOOK_ATTACHMENT_MAX_MB", "10")),
+            max_items=_parse_nonnegative_int(os.environ.get("OUTLOOK_MAX_ITEMS", "50"), "OUTLOOK_MAX_ITEMS"),
+            max_body_chars=_parse_nonnegative_int(os.environ.get("OUTLOOK_MAX_BODY_CHARS", "4000"), "OUTLOOK_MAX_BODY_CHARS"),
+            attachment_max_mb=_parse_nonnegative_int(os.environ.get("OUTLOOK_ATTACHMENT_MAX_MB", "10"), "OUTLOOK_ATTACHMENT_MAX_MB"),
             redact_mode=os.environ.get("OUTLOOK_REDACT_MODE", "none"),
             enable_write=os.environ.get("OUTLOOK_ENABLE_WRITE", "false").lower() == "true",
             enable_send=os.environ.get("OUTLOOK_ENABLE_SEND", "false").lower() == "true",
             enable_delete=os.environ.get("OUTLOOK_ENABLE_DELETE", "false").lower() == "true",
             enable_rules=os.environ.get("OUTLOOK_ENABLE_RULES", "false").lower() == "true",
-            allowlist_domains=_parse_domain_list(os.environ.get("OUTLOOK_ALLOWLIST_DOMAINS", "")),
+            allowlist_domains=_parse_domain_list(
+                os.environ.get("OUTLOOK_ALLOWLIST_DOMAINS", ""),
+                "OUTLOOK_ALLOWLIST_DOMAINS",
+            ),
         )
 
 
@@ -61,6 +97,14 @@ class OutlookAccountOverride:
     redact_mode: str | None = None
     allowlist_domains: list[str] | None = None
 
+    def __post_init__(self) -> None:
+        for name in ("max_items", "max_body_chars"):
+            value = getattr(self, name)
+            if value is not None and (
+                isinstance(value, bool) or not isinstance(value, int) or value < 0
+            ):
+                raise ValueError(f"{name} must be a non-negative integer when set.")
+
 
 def _parse_folders_env(key: str) -> list[str] | None:
     raw = os.environ.get(key, "").strip()
@@ -80,20 +124,14 @@ def _parse_bool_env(key: str) -> bool | None:
 
 def _parse_int_env(key: str) -> int | None:
     raw = os.environ.get(key, "").strip()
-    try:
-        return int(raw) if raw else None
-    except ValueError:
+    if not raw:
         return None
+    return _parse_nonnegative_int(raw, key)
 
 
 def _parse_str_env(key: str) -> str | None:
     raw = os.environ.get(key, "").strip()
     return raw if raw else None
-
-
-def _parse_domain_list(raw: str) -> list[str]:
-    parts = [d.strip().lower() for d in raw.split(",")]
-    return [d for d in parts if d and "." in d]
 
 
 def _parse_account_overrides() -> dict[str, OutlookAccountOverride]:
@@ -103,6 +141,7 @@ def _parse_account_overrides() -> dict[str, OutlookAccountOverride]:
         email = os.environ.get(f"{prefix}EMAIL", "").strip().lower()
         if not email:
             continue
+        domain_key = f"{prefix}ALLOWLIST_DOMAINS"
         overrides[email] = OutlookAccountOverride(
             email=email,
             allowlist_folders=_parse_folders_env(f"{prefix}ALLOWLIST_FOLDERS"),
@@ -113,7 +152,9 @@ def _parse_account_overrides() -> dict[str, OutlookAccountOverride]:
             max_items=_parse_int_env(f"{prefix}MAX_ITEMS"),
             max_body_chars=_parse_int_env(f"{prefix}MAX_BODY_CHARS"),
             redact_mode=_parse_str_env(f"{prefix}REDACT_MODE"),
-            allowlist_domains=_parse_domain_list(os.environ.get(f"{prefix}ALLOWLIST_DOMAINS", "")) or None,
+            allowlist_domains=_parse_domain_list(
+                os.environ.get(domain_key, ""), domain_key
+            ) or None,
         )
     return overrides
 
