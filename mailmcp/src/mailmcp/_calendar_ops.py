@@ -23,6 +23,7 @@ def outlook_list_calendar_events(
     end: str | None = None,
     top: int = 20,
     include_cancelled: bool = False,
+    account_email: str | None = None,
 ) -> dict:
     """
     List calendar events (appointments and meetings) in a date/time range.
@@ -37,6 +38,7 @@ def outlook_list_calendar_events(
              Defaults to start + 7 days if omitted.
         top: Maximum events to return (default 20, capped by server config).
         include_cancelled: Whether to include cancelled meetings (default False).
+        account_email: Optional account email for per-account config enforcement.
 
     Returns:
         {"events": [...], "count": int}
@@ -46,6 +48,7 @@ def outlook_list_calendar_events(
         end=end,
         top=top,
         include_cancelled=include_cancelled,
+        account_email=account_email,
     )
     return {"events": result, "count": len(result)}
 
