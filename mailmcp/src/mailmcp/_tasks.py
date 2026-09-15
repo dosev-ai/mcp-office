@@ -57,7 +57,8 @@ def list_tasks(include_completed: bool = False, due_before: str | None = None, t
             due_val = getattr(task, "DueDate", None)
             due_iso = str(due_val)[:10] if due_val and str(due_val) != "4501-01-01 00:00:00" else None
             body_text = str(getattr(task, "Body", "") or "")
-            result.append({"entry_id": task.EntryID, "subject": _redact(str(task.Subject or ""), account_email), "status": status_int, "status_label": _OL_TASK_STATUS.get(status_int, "Unknown"), "priority": _OL_PRIORITY_REVERSE_MAP.get(importance, "normal"), "due_date": due_iso, "complete": bool(getattr(task, "Complete", False)), "categories": str(getattr(task, "Categories", "") or ""), "body_preview": _redact(body_text[:200], account_email)})
+            preview_chars = min(200, cfg.max_body_chars)
+            result.append({"entry_id": task.EntryID, "subject": _redact(str(task.Subject or ""), account_email), "status": status_int, "status_label": _OL_TASK_STATUS.get(status_int, "Unknown"), "priority": _OL_PRIORITY_REVERSE_MAP.get(importance, "normal"), "due_date": due_iso, "complete": bool(getattr(task, "Complete", False)), "categories": str(getattr(task, "Categories", "") or ""), "body_preview": _redact(body_text[:preview_chars], account_email)})
         except Exception as exc:
             logger.warning("list_tasks: skipping item (%s)", exc)
     return {"tasks": result, "count": len(result)}
