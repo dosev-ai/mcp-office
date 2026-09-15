@@ -5,7 +5,7 @@ import logging
 
 from mailmcp import _core
 from mailmcp import _folders
-from mailmcp._core import get_config, get_effective_config, _assert_allowed, _EMAIL_VALIDATE_RE, _redact, _assert_domains_allowed, _resolve_smtp_from_entry
+from mailmcp._core import get_effective_config, _assert_allowed, _EMAIL_VALIDATE_RE, _redact, _assert_domains_allowed, _resolve_smtp_from_entry
 from mailmcp._formatters import _fmt_date, _resolve_sender_email
 from mailmcp._folders import _FLAG_STATUS_MAP
 from mailmcp._mail_calendar import _FB_STATUS as _FB_STATUS, check_freebusy as check_freebusy, create_meeting_draft as create_meeting_draft
