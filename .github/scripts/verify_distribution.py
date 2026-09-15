@@ -150,21 +150,28 @@ def verify(
     with tarfile.open(sdist, "r:gz") as archive:
         members = archive.getmembers()
         sdist_names = [member.name for member in members]
-        if not any(member.endswith("/pyproject.toml") for member in sdist_names):
-            fail("sdist is missing pyproject.toml")
-        if not any(member.endswith("/README.md") for member in sdist_names):
-            fail("sdist is missing README.md")
+        sdist_root = sdist.name.removesuffix(".tar.gz")
+        root_pyproject = f"{sdist_root}/pyproject.toml"
+        root_readme = f"{sdist_root}/README.md"
+        if root_pyproject not in sdist_names:
+            fail(f"sdist is missing root pyproject.toml at {root_pyproject!r}")
+        if root_readme not in sdist_names:
+            fail(f"sdist is missing root README.md at {root_readme!r}")
 
-        pkg_infos = [
+        root_pkg_info_name = f"{sdist_root}/PKG-INFO"
+        root_pkg_infos = [
             member
             for member in members
-            if member.name.endswith("/PKG-INFO") and member.isfile()
+            if member.isfile() and member.name == root_pkg_info_name
         ]
-        if len(pkg_infos) != 1:
-            fail(f"expected one sdist PKG-INFO, found {[m.name for m in pkg_infos]}")
-        pkg_info_handle = archive.extractfile(pkg_infos[0])
+        if len(root_pkg_infos) != 1:
+            fail(
+                f"expected root sdist PKG-INFO at {root_pkg_info_name!r}, "
+                f"found {[m.name for m in root_pkg_infos]}"
+            )
+        pkg_info_handle = archive.extractfile(root_pkg_infos[0])
         if pkg_info_handle is None:
-            fail("cannot read sdist PKG-INFO")
+            fail("cannot read root sdist PKG-INFO")
         _verify_identity(_parse_metadata(pkg_info_handle.read()), name, version, "sdist")
 
         for package in expected_packages:
