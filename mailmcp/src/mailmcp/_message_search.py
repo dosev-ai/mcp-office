@@ -75,8 +75,12 @@ def outlook_search_messages(
     return {"messages": result, "count": len(result), "scan_capped": scan_capped}
 
 
-def outlook_search_recipients(name: str | None = None, query: str | None = None) -> dict:
-    result = ol.search_recipients(name=name, query=query)
+def outlook_search_recipients(
+    name: str | None = None,
+    query: str | None = None,
+    account_email: str | None = None,
+) -> dict:
+    result = ol.search_recipients(name=name, query=query, account_email=account_email)
     return {"recipients": result, "count": len(result)}
 
 
