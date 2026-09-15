@@ -36,8 +36,8 @@ def get_mail_context(
             returned_count (int): number of messages collected.
             limit (int): effective cap applied (min of max_items and cfg.max_items).
             maybe_more (bool): True if the cap was reached (more messages may exist).
-            filter_applied (bool): True if a COM Restrict filter was active; False if
-                no date_range was given OR if Restrict raised and fell back to unfiltered.
+            filter_applied (bool): True when a date-range COM Restrict filter was
+                successfully applied; False when no date range was requested.
             threads (list[dict]): messages grouped by ConversationID. Messages without
                 a ConversationID are grouped under thread["conversation_id"] = None.
     """
@@ -89,8 +89,9 @@ def get_mail_context(
             items = items.Restrict(restriction)
             items.Sort("[ReceivedTime]", True)
         except Exception as exc:
-            logger.warning("Restrict failed (%s); falling back to unfiltered scan", exc)
-            filter_applied = False
+            raise RuntimeError(
+                "Outlook could not apply the requested mail-context date filter; no unfiltered messages were returned."
+            ) from exc
 
     messages: list[dict] = []
     subject_lower = subject_filter.lower() if subject_filter else None
