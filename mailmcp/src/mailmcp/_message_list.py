@@ -52,9 +52,11 @@ def outlook_get_conversation_thread(
     conversation_id: str | None = None,
     max_items: int = 50,
     entry_id: str | None = None,
+    account_email: str | None = None,
 ) -> dict:
     return ol.get_conversation_thread(
         conversation_id=conversation_id,
         max_items=max_items,
         entry_id=entry_id,
+        account_email=account_email,
     )
