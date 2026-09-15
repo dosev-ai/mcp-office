@@ -33,6 +33,31 @@ jobs:
           --release-tag "${RELEASE_TAG}"
       - name: Validate distribution metadata
         run: python -m twine check dist/*
+      - name: Verify release-built wheel installation and entry points
+        run: |
+          python -m venv .release-venv
+          .release-venv/bin/python -m pip install --upgrade pip
+          .release-venv/bin/python -m pip install dist/*.whl
+          .release-venv/bin/python -m pip check
+          .release-venv/bin/python - <<'PY'
+          from importlib.metadata import distribution
+
+          dist = distribution("mcp-office")
+          assert dist.metadata["Name"] == "mcp-office"
+          console = {
+              entry_point.name: entry_point
+              for entry_point in dist.entry_points
+              if entry_point.group == "console_scripts"
+          }
+          required = {"excelmcp", "pptmcp", "wordmcp"}
+          missing = sorted(required - set(console))
+          assert not missing, f"Missing required console entry points: {missing}"
+          for name, entry_point in sorted(console.items()):
+              target = entry_point.load()
+              assert callable(target), f"Console entry point {name!r} is not callable"
+              print(f"Loaded console entry point: {name} -> {entry_point.value}")
+          print(f"Release artifact install PASS - mcp-office {dist.version}")
+          PY
       - name: Record tag-to-artifact provenance
         env:
           RELEASE_TAG: ${{ github.event.release.tag_name }}
