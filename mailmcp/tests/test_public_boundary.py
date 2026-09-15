@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import ast
+import re
 from pathlib import Path
 
 PACKAGE = Path(__file__).resolve().parents[1] / "src" / "mailmcp"
+PUBLIC_ROOT = PACKAGE.parents[1]
 
 EXPECTED_TOOLS = {
     "outlook_health", "outlook_list_accounts", "outlook_list_folders",
@@ -21,32 +23,40 @@ EXPECTED_TOOLS = {
     "outlook_search_contacts", "outlook_create_folder",
 }
 
-EXCLUDED_MODULES = {
-    "_executor.py", "_mailrepo_disposition.py", "_mailrepo_fts.py",
-    "_mailrepo_hybrid.py", "_mailrepo_imports.py", "_mailrepo_ingest.py",
-    "_mailrepo_models.py", "_mailrepo_multi.py", "_mailrepo_ops.py",
-    "_mailrepo_search.py", "_prewarm.py", "_retrieval_router.py",
-    "mailrepo_db.py", "mailrepo_tools.py",
+PUBLIC_MODULES = {
+    "__init__.py", "__main__.py", "_admin.py", "_calendar.py",
+    "_calendar_ops.py", "_categories.py", "_config_policy.py",
+    "_contacts_com.py", "_contacts_ops.py", "_context.py", "_context_ops.py",
+    "_core.py", "_folders.py", "_formatters.py", "_item_guards.py",
+    "_mail_calendar.py", "_mail_compose.py", "_mail_edit.py", "_mail_ops.py",
+    "_message_actions.py", "_message_fetch.py", "_message_list.py",
+    "_message_ops.py", "_message_recipients.py", "_message_save.py",
+    "_message_search.py", "_messages.py", "_msg_rules.py", "_prompts.py",
+    "_task_category_ops.py", "_tasks.py", "_tools.py", "draft_routine.py",
+    "outlook_com.py", "search_routine.py", "server.py",
 }
 
+_ACTION_ID_RE = re.compile(r"\baction-\d{6,}(?:-[0-9a-z-]+)?\b", re.IGNORECASE)
+_NON_WEB_URI_RE = re.compile(r"\b(?!https?://)[a-z][a-z0-9+.-]*://", re.IGNORECASE)
+_ABSOLUTE_USER_PATH_RE = re.compile(r"[A-Za-z]:\\Users\\[^\r\n\"']+", re.IGNORECASE)
 
-def test_private_modules_are_not_in_public_package() -> None:
+
+def test_public_package_contains_only_reviewed_modules() -> None:
     existing = {path.name for path in PACKAGE.glob("*.py")}
-    assert not (existing & EXCLUDED_MODULES)
+    assert existing == PUBLIC_MODULES
 
 
-def test_public_source_has_no_private_module_imports_or_internal_ids() -> None:
-    forbidden = (
-        "mailmcp._mailrepo", "mailmcp.mailrepo", "mailmcp._retrieval_router",
-        "mailmcp._prewarm", "action-177", "action-178", "cortex://",
-        "C:\\Users\\", "msoffice-mcps",
-    )
+def test_public_python_tree_has_no_internal_artifact_markers() -> None:
     offenders: list[str] = []
-    for path in PACKAGE.glob("*.py"):
+    for path in PUBLIC_ROOT.rglob("*.py"):
         text = path.read_text(encoding="utf-8")
-        for token in forbidden:
-            if token in text:
-                offenders.append(f"{path.name}: {token}")
+        for label, pattern in (
+            ("internal action identifier", _ACTION_ID_RE),
+            ("non-web internal URI", _NON_WEB_URI_RE),
+            ("absolute user profile path", _ABSOLUTE_USER_PATH_RE),
+        ):
+            if pattern.search(text):
+                offenders.append(f"{path.relative_to(PUBLIC_ROOT)}: {label}")
     assert offenders == []
 
 
