@@ -39,7 +39,7 @@ def test_config_rejects_negative_limits_and_malformed_domains(monkeypatch):
         _core._parse_account_overrides()
 
 
-def test_default_task_paths_require_tasks_allowlist(mailbox):
+def test_default_task_paths_require_tasks_allowlist(mailbox, monkeypatch):
     _core.set_config(_core.OutlookConfig(allowlist_folders=["Inbox", "Contacts"], enable_write=True))
     with pytest.raises(PermissionError, match="Tasks"):
         _tasks.list_tasks()
@@ -48,6 +48,7 @@ def test_default_task_paths_require_tasks_allowlist(mailbox):
 
     mailbox.item.Class = _folders._OL_TASK_CLASS
     mailbox.item.Parent = SimpleNamespace(Name="Tasks")
+    monkeypatch.setattr(_tasks, "_mapi", lambda: mailbox.mapi)
     with pytest.raises(PermissionError, match="Tasks"):
         _tasks.complete_task("synthetic-item", confirm=True)
 
