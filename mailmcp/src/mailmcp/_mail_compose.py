@@ -6,7 +6,7 @@ import re
 
 from mailmcp import _core
 from mailmcp import _folders
-from mailmcp._core import _assert_allowed, _EMAIL_VALIDATE_RE, _assert_domains_allowed, _resolve_smtp_from_entry
+from mailmcp._core import _assert_allowed, _EMAIL_VALIDATE_RE, _assert_domains_allowed, _resolve_smtp_from_entry, _redact
 from mailmcp._formatters import _text_to_html
 
 _ARTIFACT_ID_PREFIX_MAIL_DRAFT = "mail:draft-"
@@ -17,6 +17,7 @@ def compose_mail(to: list[str], subject: str, body: str, html_body: str | None =
     _core._assert_write_enabled(account_email=account_email)
     if not confirm:
         raise ValueError("confirm=True is required to create a draft. This is a safety gate.")
+    _assert_allowed("Drafts", account_email)
     if not to:
         raise ValueError("'to' must contain at least one recipient")
     for addr in to + (cc or []):
@@ -89,6 +90,7 @@ def reply_all_draft(entry_id: str, body: str, html_body: str | None = None, cc: 
     except Exception as exc:
         raise ValueError(f"Cannot determine source folder for entry_id={entry_id!r}") from exc
     _assert_allowed(parent_name, account_email)
+    _assert_allowed("Drafts", account_email)
     reply = orig.ReplyAll()
     auto_addrs = _resolved_reply_addresses(reply)
     if auto_addrs:
@@ -105,7 +107,13 @@ def reply_all_draft(entry_id: str, body: str, html_body: str | None = None, cc: 
     reply.Save()
     if not reply.EntryID:
         raise ValueError("reply.Save() did not produce an EntryID; cannot construct artifact_id.")
-    result = {"status": "draft_saved", "entry_id": reply.EntryID, "artifact_id": f"{_ARTIFACT_ID_PREFIX_MAIL_DRAFT}{reply.EntryID}", "subject": reply.Subject, "to": [reply.To] if reply.To else []}
+    result = {
+        "status": "draft_saved",
+        "entry_id": reply.EntryID,
+        "artifact_id": f"{_ARTIFACT_ID_PREFIX_MAIL_DRAFT}{reply.EntryID}",
+        "subject": _redact(str(reply.Subject or ""), account_email),
+        "to": [_redact(str(reply.To), account_email)] if reply.To else [],
+    }
     if cc:
         result["cc"] = cc
     if bcc:
@@ -129,6 +137,7 @@ def reply_draft(entry_id: str, body: str, html_body: str | None = None, cc: list
     except Exception as exc:
         raise ValueError(f"Cannot determine source folder for entry_id={entry_id!r}") from exc
     _assert_allowed(parent_name, account_email)
+    _assert_allowed("Drafts", account_email)
     reply = msg.Reply()
     auto_addrs = _resolved_reply_addresses(reply)
     if auto_addrs:
@@ -145,7 +154,13 @@ def reply_draft(entry_id: str, body: str, html_body: str | None = None, cc: list
     reply.Save()
     if not reply.EntryID:
         raise ValueError("reply.Save() did not produce an EntryID; cannot construct artifact_id.")
-    result = {"status": "reply_draft_saved", "entry_id": reply.EntryID, "artifact_id": f"{_ARTIFACT_ID_PREFIX_MAIL_DRAFT}{reply.EntryID}", "subject": reply.Subject, "to": [reply.To] if reply.To else []}
+    result = {
+        "status": "reply_draft_saved",
+        "entry_id": reply.EntryID,
+        "artifact_id": f"{_ARTIFACT_ID_PREFIX_MAIL_DRAFT}{reply.EntryID}",
+        "subject": _redact(str(reply.Subject or ""), account_email),
+        "to": [_redact(str(reply.To), account_email)] if reply.To else [],
+    }
     if cc:
         result["cc"] = cc
     if bcc:
@@ -175,6 +190,7 @@ def forward_mail(entry_id: str, to: list[str], body: str, html_body: str | None 
     except Exception as exc:
         raise ValueError(f"Cannot determine source folder for entry_id={entry_id!r}") from exc
     _assert_allowed(parent_name, account_email)
+    _assert_allowed("Drafts", account_email)
     try:
         fwd = msg.Forward()
     except Exception as exc:
