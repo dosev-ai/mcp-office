@@ -7,7 +7,7 @@ from typing import Any
 
 from mailmcp import _core
 from mailmcp import _folders
-from mailmcp._core import get_config, get_effective_config, _assert_allowed, _EMAIL_VALIDATE_RE
+from mailmcp._core import get_effective_config, _assert_allowed, _EMAIL_VALIDATE_RE
 from mailmcp._folders import _OL_APPOINTMENT_CLASS
 from mailmcp._formatters import _format_outlook_date
 from mailmcp._item_guards import _assert_calendar_item_folder
@@ -15,9 +15,19 @@ from mailmcp._item_guards import _assert_calendar_item_folder
 logger = logging.getLogger(__name__)
 
 
-def list_calendar_events(start: str | None = None, end: str | None = None, top: int | None = None, include_cancelled: bool = False) -> list[dict]:
-    _assert_allowed("Calendar")
-    cfg = get_config()
+def _local_naive(dt: _dt) -> _dt:
+    return dt.astimezone().replace(tzinfo=None) if dt.tzinfo is not None else dt
+
+
+def list_calendar_events(
+    start: str | None = None,
+    end: str | None = None,
+    top: int | None = None,
+    include_cancelled: bool = False,
+    account_email: str | None = None,
+) -> list[dict]:
+    _assert_allowed("Calendar", account_email)
+    cfg = get_effective_config(account_email)
     limit = min(top or cfg.max_items, cfg.max_items)
     now = _dt.now()
     if start is None:
@@ -34,12 +44,14 @@ def list_calendar_events(start: str | None = None, end: str | None = None, top: 
             end_dt = _dt.fromisoformat(end)
         except ValueError as exc:
             raise ValueError(f"Invalid 'end' datetime: {exc}") from exc
+    start_dt = _local_naive(start_dt)
+    end_dt = _local_naive(end_dt)
     if end_dt <= start_dt:
         raise ValueError("'end' must be after 'start'.")
     start_str = _format_outlook_date(start_dt)
     end_str = _format_outlook_date(end_dt)
     filter_str = f"[Start] >= '{start_str}' AND [Start] <= '{end_str}'"
-    cal = _folders._get_calendar_folder()
+    cal = _folders._get_calendar_folder(account_email=account_email)
     items = cal.Items
     items.IncludeRecurrences = True
     items.Sort("[Start]")
@@ -52,7 +64,7 @@ def list_calendar_events(start: str | None = None, end: str | None = None, top: 
             status = getattr(apt, "MeetingStatus", 0)
             if not include_cancelled and status in (5, 7):
                 continue
-            result.append(_folders._appointment_to_dict(apt))
+            result.append(_folders._appointment_to_dict(apt, account_email=account_email))
         except Exception as exc:
             logger.debug("Skipping calendar item: %s", exc)
     return result
