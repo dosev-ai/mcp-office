@@ -108,12 +108,14 @@ class VerifyDistributionTests(unittest.TestCase):
 
         sdist = dist / "mcp_office-1.2.3.tar.gz"
         with tarfile.open(sdist, "w:gz") as archive:
+            root_pkg_info = f"Name: mcp-office\nVersion: {sdist_version}\n".encode()
             entries = [
                 ("mcp_office-1.2.3/pyproject.toml", project_text.encode()),
                 ("mcp_office-1.2.3/README.md", b"readme"),
+                ("mcp_office-1.2.3/PKG-INFO", root_pkg_info),
                 (
-                    "mcp_office-1.2.3/PKG-INFO",
-                    f"Name: mcp-office\nVersion: {sdist_version}\n".encode(),
+                    "mcp_office-1.2.3/mcp_office.egg-info/PKG-INFO",
+                    root_pkg_info,
                 ),
             ]
             entries.extend(
@@ -135,7 +137,7 @@ class VerifyDistributionTests(unittest.TestCase):
 
         return td, project, dist
 
-    def test_happy_path(self):
+    def test_happy_path_allows_egg_info_pkg_info(self):
         td, project, dist = self.make_fixture()
         with td:
             name, version, _, _ = verify_distribution.verify(
@@ -174,6 +176,13 @@ class VerifyDistributionTests(unittest.TestCase):
             wrong_entry="excelmcp.wrong:main"
         )
         with td, self.assertRaisesRegex(SystemExit, "console script 'excelmcp' maps"):
+            verify_distribution.verify(project, dist)
+
+    def test_rejects_missing_root_sdist_pkg_info_even_with_egg_info_copy(self):
+        td, project, dist = self.make_fixture(
+            sdist_omit="mcp_office-1.2.3/PKG-INFO"
+        )
+        with td, self.assertRaisesRegex(SystemExit, "expected root sdist PKG-INFO"):
             verify_distribution.verify(project, dist)
 
     def test_rejects_missing_sdist_package_content(self):
