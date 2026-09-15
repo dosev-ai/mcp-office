@@ -89,7 +89,8 @@ class VerifyDistributionTests(unittest.TestCase):
                 path = package.replace(".", "/") + "/__init__.py"
                 if path != wheel_omit:
                     archive.writestr(path, "")
-            archive.writestr("excelmcp/extra.py", "")
+            if "excelmcp/extra.py" != wheel_omit:
+                archive.writestr("excelmcp/extra.py", "")
             archive.writestr(
                 "mcp_office-1.2.3.dist-info/METADATA",
                 "Name: mcp-office\nVersion: 1.2.3\n",
@@ -197,13 +198,23 @@ class VerifyDistributionTests(unittest.TestCase):
         ):
             verify_distribution.verify(project, dist)
 
-    def test_rejects_sdist_module_missing_from_wheel_parity(self):
+    def test_rejects_wheel_module_missing_from_sdist_parity(self):
         td, project, dist = self.make_fixture(
             sdist_omit="mcp_office-1.2.3/excelmcp/src/excelmcp/extra.py"
         )
         with td, self.assertRaisesRegex(
             SystemExit,
             "sdist is missing wheel package contents",
+        ):
+            verify_distribution.verify(project, dist)
+
+    def test_rejects_sdist_module_missing_from_wheel_parity(self):
+        td, project, dist = self.make_fixture(
+            wheel_omit="excelmcp/extra.py"
+        )
+        with td, self.assertRaisesRegex(
+            SystemExit,
+            "wheel is missing sdist package contents",
         ):
             verify_distribution.verify(project, dist)
 
