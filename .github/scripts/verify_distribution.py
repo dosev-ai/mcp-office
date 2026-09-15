@@ -8,6 +8,20 @@ import tarfile
 import tomllib
 import zipfile
 
+REQUIRED_PACKAGES = frozenset({
+    "excelmcp",
+    "pptmcp",
+    "wordmcp",
+    "wordmcp._com",
+    "wordmcp._docx",
+    "mcpshared",
+})
+REQUIRED_SCRIPTS = {
+    "excelmcp": "excelmcp.server:main",
+    "pptmcp": "pptmcp.server:main",
+    "wordmcp": "wordmcp.server:main",
+}
+
 
 def fail(message: str) -> None:
     raise SystemExit(f"distribution verification failed: {message}")
@@ -24,6 +38,17 @@ def _source_package_path(package: str, package_dirs: dict[str, str]) -> str:
     base = package_dirs[root].rstrip("/")
     suffix = package[len(root):].lstrip(".").replace(".", "/")
     return f"{base}/{suffix}" if suffix else base
+
+
+def _parse_metadata(raw: bytes):
+    return email.parser.Parser().parsestr(raw.decode("utf-8"))
+
+
+def _verify_identity(metadata, name: str, version: str, label: str) -> None:
+    if metadata.get("Name") != name:
+        fail(f"{label} metadata Name={metadata.get('Name')!r}, expected {name!r}")
+    if metadata.get("Version") != version:
+        fail(f"{label} metadata Version={metadata.get('Version')!r}, expected {version!r}")
 
 
 def verify(
@@ -52,6 +77,22 @@ def verify(
         if tag_version != version:
             fail(f"release tag {release_tag!r} does not match project version {version!r}")
 
+    expected_packages = config.get("tool", {}).get("setuptools", {}).get("packages", [])
+    configured_package_set = set(expected_packages)
+    missing_required_packages = sorted(REQUIRED_PACKAGES - configured_package_set)
+    if missing_required_packages:
+        fail(
+            "configured distribution is missing required suite packages: "
+            f"{missing_required_packages}"
+        )
+
+    expected_scripts = project.get("scripts", {})
+    for script_name, target in REQUIRED_SCRIPTS.items():
+        if expected_scripts.get(script_name) != target:
+            fail(f"required console script {script_name!r} must map to {target!r}")
+
+    package_dirs = config.get("tool", {}).get("setuptools", {}).get("package-dir", {})
+
     wheels = sorted(dist_dir.glob("*.whl"))
     sdists = sorted(dist_dir.glob("*.tar.gz"))
     if len(wheels) != 1:
@@ -67,11 +108,7 @@ def verify(
     if not sdist.name.startswith(f"mcp_office-{version}"):
         fail(f"unexpected sdist filename: {sdist.name}")
 
-    expected_packages = config.get("tool", {}).get("setuptools", {}).get("packages", [])
-    if not expected_packages:
-        fail("tool.setuptools.packages is empty")
-    package_dirs = config.get("tool", {}).get("setuptools", {}).get("package-dir", {})
-
+    wheel_files_by_package: dict[str, set[str]] = {}
     with zipfile.ZipFile(wheel) as archive:
         names = archive.namelist()
         metadata_paths = [p for p in names if p.endswith(".dist-info/METADATA")]
@@ -81,20 +118,21 @@ def verify(
         if len(entry_point_paths) != 1:
             fail(f"expected one entry_points.txt, found {entry_point_paths}")
 
-        metadata = email.parser.Parser().parsestr(
-            archive.read(metadata_paths[0]).decode("utf-8")
+        _verify_identity(
+            _parse_metadata(archive.read(metadata_paths[0])), name, version, "wheel"
         )
-        if metadata.get("Name") != name:
-            fail(f"wheel metadata Name={metadata.get('Name')!r}, expected {name!r}")
-        if metadata.get("Version") != version:
-            fail(f"wheel metadata Version={metadata.get('Version')!r}, expected {version!r}")
 
         for package in expected_packages:
             prefix = package.replace(".", "/") + "/"
-            if not any(member.startswith(prefix) for member in names):
+            package_files = {
+                member[len(prefix):]
+                for member in names
+                if member.startswith(prefix) and not member.endswith("/")
+            }
+            if not package_files:
                 fail(f"wheel is missing configured package {package!r}")
+            wheel_files_by_package[package] = package_files
 
-        expected_scripts = project.get("scripts", {})
         parser_cfg = configparser.ConfigParser()
         parser_cfg.read_string(archive.read(entry_point_paths[0]).decode("utf-8"))
         installed_scripts = (
@@ -110,19 +148,48 @@ def verify(
                 )
 
     with tarfile.open(sdist, "r:gz") as archive:
-        sdist_names = archive.getnames()
+        members = archive.getmembers()
+        sdist_names = [member.name for member in members]
         if not any(member.endswith("/pyproject.toml") for member in sdist_names):
             fail("sdist is missing pyproject.toml")
         if not any(member.endswith("/README.md") for member in sdist_names):
             fail("sdist is missing README.md")
-        normalized_members = [f"/{member.strip('/')}/" for member in sdist_names]
+
+        pkg_infos = [
+            member
+            for member in members
+            if member.name.endswith("/PKG-INFO") and member.isfile()
+        ]
+        if len(pkg_infos) != 1:
+            fail(f"expected one sdist PKG-INFO, found {[m.name for m in pkg_infos]}")
+        pkg_info_handle = archive.extractfile(pkg_infos[0])
+        if pkg_info_handle is None:
+            fail("cannot read sdist PKG-INFO")
+        _verify_identity(_parse_metadata(pkg_info_handle.read()), name, version, "sdist")
+
         for package in expected_packages:
             source_path = _source_package_path(package, package_dirs).strip("/")
             marker = f"/{source_path}/"
-            if not any(marker in member for member in normalized_members):
+            sdist_package_files: set[str] = set()
+            for member in members:
+                if not member.isfile():
+                    continue
+                padded = f"/{member.name.strip('/')}"
+                marker_index = padded.find(marker)
+                if marker_index >= 0:
+                    sdist_package_files.add(padded[marker_index + len(marker):])
+            if not sdist_package_files:
                 fail(
                     f"sdist is missing configured package {package!r} "
                     f"at {source_path!r}"
+                )
+            missing_from_sdist = sorted(
+                wheel_files_by_package[package] - sdist_package_files
+            )
+            if missing_from_sdist:
+                fail(
+                    f"sdist is missing wheel package contents for {package!r}: "
+                    f"{missing_from_sdist}"
                 )
 
     return name, version, wheel, sdist
