@@ -421,6 +421,10 @@ def _assert_domains_allowed(addresses: list[str], account_email: str | None = No
 
 
 def _assert_allowed(folder_name: str, account_email: str | None = None) -> None:
+    if account_email is None and _account_overrides:
+        raise PermissionError(
+            "account_email is required when per-account Outlook policy is configured."
+        )
     cfg = get_effective_config(account_email)
     allowed = [f.lower() for f in cfg.allowlist_folders]
     if folder_name.lower() not in allowed and "*" not in allowed:
