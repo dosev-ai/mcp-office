@@ -2,12 +2,15 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone, timedelta
+import math
 
 from mailmcp import _core
 from mailmcp._core import _EMAIL_VALIDATE_RE, _redact, _assert_domains_allowed
 from mailmcp import _folders
 
 _FB_STATUS = {"0": "Free", "1": "Tentative", "2": "Busy", "3": "OOO", "4": "Working elsewhere"}
+_MAX_FREEBUSY_DURATION_DAYS = 30
+_MAX_FREEBUSY_TOTAL_SLOTS = 10_000
 
 
 def check_freebusy(emails: list[str], start_iso: str, end_iso: str, interval_minutes: int = 30) -> dict:
@@ -24,14 +27,23 @@ def check_freebusy(emails: list[str], start_iso: str, end_iso: str, interval_min
         raise ValueError("start_iso and end_iso must use compatible timezones") from exc
     if duration <= 0:
         raise ValueError("end_iso must be after start_iso")
+    if duration > _MAX_FREEBUSY_DURATION_DAYS * 24 * 60 * 60:
+        raise ValueError(f"Free/busy range cannot exceed {_MAX_FREEBUSY_DURATION_DAYS} days.")
     if any(not isinstance(email, str) for email in emails):
         raise ValueError("Each email must be a string.")
+    max_attendees = _core.get_config().max_items
+    if len(emails) > max_attendees:
+        raise ValueError(f"Free/busy attendee count exceeds configured max_items ({max_attendees}).")
+    num_slots = max(1, math.ceil(duration / (interval_minutes * 60)))
+    if num_slots * len(emails) > _MAX_FREEBUSY_TOTAL_SLOTS:
+        raise ValueError(
+            f"Free/busy request exceeds the {_MAX_FREEBUSY_TOTAL_SLOTS}-slot work budget. "
+            "Reduce attendees, duration, or increase interval_minutes."
+        )
     valid_addresses = [email for email in emails if _EMAIL_VALIDATE_RE.match(email)]
     _assert_domains_allowed(valid_addresses)
     mapi = _core._mapi()
     results = []
-    total_minutes = int(duration / 60)
-    num_slots = max(1, total_minutes // interval_minutes)
     for email in emails:
         if not _EMAIL_VALIDATE_RE.match(email):
             results.append({"email": _redact(email), "status": "invalid", "slots": []})
@@ -45,10 +57,12 @@ def check_freebusy(emails: list[str], start_iso: str, end_iso: str, interval_min
             midnight = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
             offset_slots = int((start_dt - midnight).total_seconds() / 60) // interval_minutes
             fb_str = recip.FreeBusy(midnight, interval_minutes, True)
+            if offset_slots + num_slots > len(fb_str):
+                raise RuntimeError("Outlook returned incomplete free/busy data for the requested range.")
             slots = []
             for i in range(num_slots):
                 fb_index = offset_slots + i
-                ch = fb_str[fb_index] if fb_index < len(fb_str) else "0"
+                ch = fb_str[fb_index]
                 slot_start = start_dt + timedelta(minutes=i * interval_minutes)
                 slot_end = min(end_dt, slot_start + timedelta(minutes=interval_minutes))
                 slots.append({"start": slot_start.isoformat(), "end": slot_end.isoformat(), "status": _FB_STATUS.get(ch, f"?({ch})")})
