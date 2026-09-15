@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0", "pytest-mock>=3.12", "ruff>=0.4", "pytest-socket>=0.7"]
+dev = ["pytest>=8.0", "pytest-mock>=3.12", "ruff==0.15.4", "pytest-socket>=0.7"]
 com = ["pywin32>=306"]  # Windows-only; required for integration COM tests (pytest -m integration)
 
 [project.urls]
