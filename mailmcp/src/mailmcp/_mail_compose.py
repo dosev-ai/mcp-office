@@ -84,9 +84,11 @@ def reply_all_draft(entry_id: str, body: str, html_body: str | None = None, cc: 
     if auto_addrs:
         _assert_domains_allowed(auto_addrs, account_email=account_email)
     for addr in cc or []:
-        recip = reply.Recipients.Add(addr); recip.Type = 2
+        recip = reply.Recipients.Add(addr)
+        recip.Type = 2
     for addr in bcc or []:
-        recip = reply.Recipients.Add(addr); recip.Type = 3
+        recip = reply.Recipients.Add(addr)
+        recip.Type = 3
     if cc or bcc:
         reply.Recipients.ResolveAll()
     _inject_reply_html(reply, body, html_body)
@@ -94,8 +96,10 @@ def reply_all_draft(entry_id: str, body: str, html_body: str | None = None, cc: 
     if not reply.EntryID:
         raise ValueError("reply.Save() did not produce an EntryID; cannot construct artifact_id.")
     result = {"status": "draft_saved", "entry_id": reply.EntryID, "artifact_id": f"{_ARTIFACT_ID_PREFIX_MAIL_DRAFT}{reply.EntryID}", "subject": reply.Subject, "to": [reply.To] if reply.To else []}
-    if cc: result["cc"] = cc
-    if bcc: result["bcc"] = bcc
+    if cc:
+        result["cc"] = cc
+    if bcc:
+        result["bcc"] = bcc
     return result
 
 
@@ -122,9 +126,11 @@ def reply_draft(entry_id: str, body: str, html_body: str | None = None, cc: list
     if auto_addrs:
         _assert_domains_allowed(auto_addrs, account_email=account_email)
     for addr in cc or []:
-        recip = reply.Recipients.Add(addr); recip.Type = 2
+        recip = reply.Recipients.Add(addr)
+        recip.Type = 2
     for addr in bcc or []:
-        recip = reply.Recipients.Add(addr); recip.Type = 3
+        recip = reply.Recipients.Add(addr)
+        recip.Type = 3
     if cc or bcc:
         reply.Recipients.ResolveAll()
     _inject_reply_html(reply, body, html_body)
@@ -132,8 +138,10 @@ def reply_draft(entry_id: str, body: str, html_body: str | None = None, cc: list
     if not reply.EntryID:
         raise ValueError("reply.Save() did not produce an EntryID; cannot construct artifact_id.")
     result = {"status": "reply_draft_saved", "entry_id": reply.EntryID, "artifact_id": f"{_ARTIFACT_ID_PREFIX_MAIL_DRAFT}{reply.EntryID}", "subject": reply.Subject, "to": [reply.To] if reply.To else []}
-    if cc: result["cc"] = cc
-    if bcc: result["bcc"] = bcc
+    if cc:
+        result["cc"] = cc
+    if bcc:
+        result["bcc"] = bcc
     return result
 
 
@@ -168,9 +176,11 @@ def forward_mail(entry_id: str, to: list[str], body: str, html_body: str | None 
     while fwd.Recipients.Count > 0:
         fwd.Recipients.Remove(1)
     for addr in to:
-        recip = fwd.Recipients.Add(addr); recip.Type = 1
+        recip = fwd.Recipients.Add(addr)
+        recip.Type = 1
     for addr in cc or []:
-        recip = fwd.Recipients.Add(addr); recip.Type = 2
+        recip = fwd.Recipients.Add(addr)
+        recip.Type = 2
     fwd.Recipients.ResolveAll()
     _inject_reply_html(fwd, body, html_body)
     for path in validated_paths:
