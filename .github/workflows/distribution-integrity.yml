@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - "pyproject.toml"
+      - "README.md"
+      - "LICENSE*"
       - "excelmcp/**"
       - "pptmcp/**"
       - "wordmcp/**"
