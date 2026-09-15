@@ -18,6 +18,12 @@ def _safe(fn, *args, **kwargs):
     except ValueError as exc:
         logger.error("ValueError in tool: %s", exc)
         raise ToolError(str(exc)) from exc
+    except TimeoutError as exc:
+        logger.error("TimeoutError in tool: %s", exc)
+        raise ToolError(
+            "Outlook operation timed out. Outlook may be syncing or unresponsive. "
+            "Retry, or open Outlook manually and try again."
+        ) from exc
     except RuntimeError as exc:
         logger.error("RuntimeError in tool: %s", exc)
         raise ToolError(f"Operation failed ({type(exc).__name__})") from None
