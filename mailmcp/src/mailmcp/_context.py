@@ -43,6 +43,13 @@ def get_mail_context(
     """
     _assert_allowed(folder, account_email)
 
+    for name, value in (
+        ("max_items", max_items),
+        ("body_preview_chars", body_preview_chars),
+    ):
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise ValueError(f"{name} must be a non-negative integer.")
+
     if date_range is not None:
         if not isinstance(date_range, dict):
             raise ValueError("date_range must be a dict or None.")
