@@ -92,6 +92,7 @@ def outlook_search_all_folders(
     top: int | None = None,
     scan_limit: int | None = None,
     timeout_seconds: int = 30,
+    account_email: str | None = None,
 ) -> dict:
     timeout_seconds = max(1, min(timeout_seconds, 300))
     detailed_kwargs = {
@@ -101,6 +102,7 @@ def outlook_search_all_folders(
         "body_contains": body_contains,
         "top": top,
         "timeout_seconds": timeout_seconds,
+        "account_email": account_email,
     }
     if scan_limit is not None:
         detailed_kwargs["scan_limit"] = scan_limit
