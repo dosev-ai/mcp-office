@@ -45,7 +45,7 @@ jobs:
         run: python .github/scripts/verify_distribution.py --dist dist --project pyproject.toml
       - name: Validate distribution metadata
         run: python -m twine check dist/*
-      - name: Verify fresh artifact installation
+      - name: Verify fresh artifact installation and entry points
         run: |
           python -m venv .dist-venv
           .dist-venv/bin/python -m pip install --upgrade pip
@@ -56,5 +56,17 @@ jobs:
 
           dist = distribution("mcp-office")
           assert dist.metadata["Name"] == "mcp-office"
+          console = {
+              entry_point.name: entry_point
+              for entry_point in dist.entry_points
+              if entry_point.group == "console_scripts"
+          }
+          required = {"excelmcp", "pptmcp", "wordmcp"}
+          missing = sorted(required - set(console))
+          assert not missing, f"Missing required console entry points: {missing}"
+          for name, entry_point in sorted(console.items()):
+              target = entry_point.load()
+              assert callable(target), f"Console entry point {name!r} is not callable"
+              print(f"Loaded console entry point: {name} -> {entry_point.value}")
           print(f"Fresh artifact install PASS - mcp-office {dist.version}")
           PY
