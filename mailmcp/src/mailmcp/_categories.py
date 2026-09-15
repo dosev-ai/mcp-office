@@ -116,9 +116,9 @@ def get_messages_by_category(
         restricted.Sort("[ReceivedTime]", True)
         items = restricted
     except Exception as exc:
-        logger.warning(
-            "get_messages_by_category: Restrict on Categories failed (%s); scanning all", exc
-        )
+        raise RuntimeError(
+            "Outlook could not apply the requested category filter; no unfiltered messages were returned."
+        ) from exc
 
     result = []
     count = 0
