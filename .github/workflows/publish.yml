@@ -24,11 +24,13 @@ jobs:
       - name: Build root mcp-office wheel and sdist
         run: python -m build --sdist --wheel .
       - name: Verify release tag, metadata, packages, and entry points
+        env:
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
         run: >-
           python .github/scripts/verify_distribution.py
           --dist dist
           --project pyproject.toml
-          --release-tag "${{ github.event.release.tag_name }}"
+          --release-tag "${RELEASE_TAG}"
       - name: Validate distribution metadata
         run: python -m twine check dist/*
       - name: Record tag-to-artifact provenance
