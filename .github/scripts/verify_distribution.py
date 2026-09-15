@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import configparser
 import email.parser
+import hashlib
 import pathlib
 import tarfile
 import tomllib
@@ -49,6 +50,10 @@ def _verify_identity(metadata, name: str, version: str, label: str) -> None:
         fail(f"{label} metadata Name={metadata.get('Name')!r}, expected {name!r}")
     if metadata.get("Version") != version:
         fail(f"{label} metadata Version={metadata.get('Version')!r}, expected {version!r}")
+
+
+def _digest(raw: bytes) -> str:
+    return hashlib.sha256(raw).hexdigest()
 
 
 def verify(
@@ -108,7 +113,7 @@ def verify(
     if not sdist.name.startswith(f"mcp_office-{version}"):
         fail(f"unexpected sdist filename: {sdist.name}")
 
-    wheel_files_by_package: dict[str, set[str]] = {}
+    wheel_files_by_package: dict[str, dict[str, str]] = {}
     with zipfile.ZipFile(wheel) as archive:
         names = archive.namelist()
         metadata_paths = [p for p in names if p.endswith(".dist-info/METADATA")]
@@ -125,7 +130,7 @@ def verify(
         for package in expected_packages:
             prefix = package.replace(".", "/") + "/"
             package_files = {
-                member[len(prefix):]
+                member[len(prefix):]: _digest(archive.read(member))
                 for member in names
                 if member.startswith(prefix) and not member.endswith("/")
             }
@@ -177,26 +182,49 @@ def verify(
         for package in expected_packages:
             source_path = _source_package_path(package, package_dirs).strip("/")
             marker = f"/{source_path}/"
-            sdist_package_files: set[str] = set()
+            sdist_package_files: dict[str, str] = {}
             for member in members:
                 if not member.isfile():
                     continue
                 padded = f"/{member.name.strip('/')}"
                 marker_index = padded.find(marker)
-                if marker_index >= 0:
-                    sdist_package_files.add(padded[marker_index + len(marker):])
+                if marker_index < 0:
+                    continue
+                handle = archive.extractfile(member)
+                if handle is None:
+                    fail(f"cannot read sdist member {member.name!r}")
+                relative = padded[marker_index + len(marker):]
+                sdist_package_files[relative] = _digest(handle.read())
             if not sdist_package_files:
                 fail(
                     f"sdist is missing configured package {package!r} "
                     f"at {source_path!r}"
                 )
+            wheel_package_files = wheel_files_by_package[package]
             missing_from_sdist = sorted(
-                wheel_files_by_package[package] - sdist_package_files
+                set(wheel_package_files) - set(sdist_package_files)
             )
             if missing_from_sdist:
                 fail(
                     f"sdist is missing wheel package contents for {package!r}: "
                     f"{missing_from_sdist}"
+                )
+            missing_from_wheel = sorted(
+                set(sdist_package_files) - set(wheel_package_files)
+            )
+            if missing_from_wheel:
+                fail(
+                    f"wheel is missing sdist package contents for {package!r}: "
+                    f"{missing_from_wheel}"
+                )
+            mismatched = sorted(
+                path for path in wheel_package_files
+                if wheel_package_files[path] != sdist_package_files[path]
+            )
+            if mismatched:
+                fail(
+                    f"wheel/sdist package content hashes differ for {package!r}: "
+                    f"{mismatched}"
                 )
 
     return name, version, wheel, sdist
