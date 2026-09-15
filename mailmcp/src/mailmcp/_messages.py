@@ -10,7 +10,7 @@ import time
 
 from mailmcp import _folders
 from mailmcp._core import get_config, get_effective_config, _assert_allowed
-from mailmcp._formatters import _msg_header, _parse_date, _format_outlook_date
+from mailmcp._formatters import _msg_header, _parse_date, _format_outlook_date, _resolve_sender_email
 
 from mailmcp._message_fetch import health, list_accounts, list_folders, get_message  # noqa: F401
 from mailmcp._message_save import save_attachments  # noqa: F401
@@ -139,16 +139,20 @@ def search_messages(folder_name: str = "Inbox", subject: str | None = None, send
             break
         inspected_count += 1
         try:
-            hdr = _msg_header(msg, account_email=account_email)
-            if subject and subject.lower() not in (hdr.get("subject") or "").lower():
+            raw_subject = str(getattr(msg, "Subject", "") or "")
+            raw_sender_email = str(_resolve_sender_email(msg) or "")
+            raw_sender_name = str(getattr(msg, "SenderName", "") or "")
+            if subject and subject.lower() not in raw_subject.lower():
                 continue
-            if sender and sender.lower() not in (hdr.get("sender_email") or "").lower() and sender.lower() not in (hdr.get("sender_name") or "").lower():
-                continue
+            if sender:
+                sender_lower = sender.lower()
+                if sender_lower not in raw_sender_email.lower() and sender_lower not in raw_sender_name.lower():
+                    continue
             if body_contains:
                 body = (getattr(msg, "Body", "") or "").lower()
                 if body_contains.lower() not in body:
                     continue
-            result.append(hdr)
+            result.append(_msg_header(msg, account_email=account_email))
             match_count += 1
         except Exception as exc:
             logger.debug("Skipping message in search: %s", exc)
