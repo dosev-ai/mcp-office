@@ -15,6 +15,12 @@ def search_recipients(
     if not isinstance(effective_name, str) or not effective_name.strip():
         raise ValueError("A non-blank 'name' or 'query' must be provided.")
     effective_name = effective_name.strip()
+
+    # Recipient discovery is governed by the Contacts/account boundary. Enforce
+    # that boundary before any GAL lookup so a missing account scope cannot leak
+    # a globally resolved identity and then have the policy error swallowed by a
+    # later best-effort Contacts lookup.
+    _assert_allowed("Contacts", account_email)
     cfg = get_effective_config(account_email)
     limit = cfg.max_items
     if limit <= 0:
@@ -39,7 +45,6 @@ def search_recipients(
     except Exception:
         pass
     try:
-        _assert_allowed("Contacts", account_email)
         contacts = (
             _folders._folder_by_name_for_account("Contacts", account_email=account_email)
             if account_email is not None
