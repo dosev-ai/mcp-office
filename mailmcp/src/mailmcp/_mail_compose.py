@@ -212,4 +212,11 @@ def forward_mail(entry_id: str, to: list[str], body: str, html_body: str | None 
     fwd.Save()
     if not fwd.EntryID:
         raise ValueError("fwd.Save() did not produce an EntryID; cannot construct artifact_id.")
-    return {"status": "draft_saved", "entry_id": fwd.EntryID, "artifact_id": f"{_ARTIFACT_ID_PREFIX_MAIL_DRAFT}{fwd.EntryID}", "subject": fwd.Subject, "to": to, "cc": cc or []}
+    return {
+        "status": "draft_saved",
+        "entry_id": fwd.EntryID,
+        "artifact_id": f"{_ARTIFACT_ID_PREFIX_MAIL_DRAFT}{fwd.EntryID}",
+        "subject": _redact(str(fwd.Subject or ""), account_email),
+        "to": to,
+        "cc": cc or [],
+    }
