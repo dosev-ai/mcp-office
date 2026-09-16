@@ -44,7 +44,7 @@ def test_default_mailbox_stats_require_account_scope():
         _calendar.get_mailbox_stats()
 
 
-def test_freebusy_uses_effective_account_policy(monkeypatch):
+def test_freebusy_uses_effective_account_policy(monkeypatch, mailbox):
     email = _install_account_override(
         redact_mode="emails",
         max_items=1,
