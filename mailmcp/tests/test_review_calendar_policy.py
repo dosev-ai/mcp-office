@@ -52,7 +52,13 @@ def test_freebusy_domain_guard_checks_whole_batch_before_com(mailbox):
 
 
 def test_freebusy_positive_preserves_response_shape(mailbox):
-    recipient = SimpleNamespace(Resolve=Mock(), Resolved=True, Name="Synthetic", FreeBusy=Mock(return_value="0" * 100))
+    recipient = SimpleNamespace(
+        Resolve=Mock(),
+        Resolved=True,
+        AddressEntry=SimpleNamespace(Address="person@example.com"),
+        Name="Synthetic",
+        FreeBusy=Mock(return_value="0" * 100),
+    )
     mailbox.mapi.CreateRecipient.return_value = recipient
     result = _mail_calendar.check_freebusy(["person@example.com"], "2026-01-01T09:00:00", "2026-01-01T10:00:00")
     assert len(result["attendees"][0]["slots"]) == 2
