@@ -234,6 +234,10 @@ def _batch_resolve_allowlist_folders(names: list[str]) -> dict[str, Any]:
 
 
 def get_mailbox_stats(folder_path: str | None = None, account_email: str | None = None) -> dict:
+    if account_email is None and _core._account_overrides:
+        raise PermissionError(
+            "account_email is required when per-account Outlook policy is configured."
+        )
     if folder_path:
         _assert_allowed(folder_path, account_email)
     cfg = get_effective_config(account_email)
