@@ -241,6 +241,25 @@ def get_mailbox_stats(folder_path: str | None = None, account_email: str | None 
     if folder_path:
         _assert_allowed(folder_path, account_email)
     cfg = get_effective_config(account_email)
+    if not folder_path and "*" in cfg.allowlist_folders:
+        from mailmcp._message_fetch import list_folders
+
+        discovered = list_folders(depth=4, account_email=account_email)
+        folder_stats = [
+            {
+                "folder": str(row.get("name") or ""),
+                "unread": int(row.get("unread_count") or 0),
+                "total": int(row.get("item_count") or 0),
+            }
+            for row in discovered
+            if str(row.get("name") or "").strip()
+        ]
+        return {
+            "folders": folder_stats,
+            "total_unread": sum(row["unread"] for row in folder_stats),
+            "total_items": sum(row["total"] for row in folder_stats),
+            "errors": [],
+        }
     names = [folder_path] if folder_path else cfg.allowlist_folders
     folder_stats: list[dict] = []
     errors: list[dict] = []
