@@ -188,6 +188,7 @@ def outlook_check_freebusy(
     start: str,
     end: str,
     interval_minutes: int = 30,
+    account_email: str | None = None,
 ) -> dict:
     """
     Check free/busy calendar availability for a list of attendees.
@@ -201,6 +202,7 @@ def outlook_check_freebusy(
         start: ISO-8601 start datetime (UTC), e.g. '2026-02-24T09:00:00' (= 10:00 CET).
         end: ISO-8601 end datetime (UTC), e.g. '2026-02-24T10:00:00'.
         interval_minutes: Granularity per slot (default 30).
+        account_email: Optional account email selecting the effective per-account policy.
     """
     if interval_minutes <= 0:
         raise ValueError("interval_minutes must be a positive integer (got %d)" % interval_minutes)
@@ -209,4 +211,5 @@ def outlook_check_freebusy(
         start_iso=start,
         end_iso=end,
         interval_minutes=interval_minutes,
+        account_email=account_email,
     )
