@@ -13,6 +13,13 @@ _MAX_FREEBUSY_DURATION_DAYS = 30
 _MAX_FREEBUSY_TOTAL_SLOTS = 10_000
 
 
+def _freebusy_local_naive(value: datetime) -> datetime:
+    """Interpret naive inputs as UTC and return the equivalent local wall time."""
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    return value.astimezone().replace(tzinfo=None)
+
+
 def check_freebusy(
     emails: list[str],
     start_iso: str,
@@ -24,24 +31,27 @@ def check_freebusy(
         raise PermissionError(
             "account_email is required when per-account Outlook policy is configured."
         )
-    cfg = _core.get_effective_config(account_email)
     try:
-        start_dt = datetime.fromisoformat(start_iso)
-        end_dt = datetime.fromisoformat(end_iso)
+        start_input = datetime.fromisoformat(start_iso)
+        end_input = datetime.fromisoformat(end_iso)
     except ValueError as exc:
         raise ValueError(f"Invalid datetime format: {exc}. Use ISO-8601, e.g. '2026-02-24T09:00:00'") from exc
-    if isinstance(interval_minutes, bool) or not isinstance(interval_minutes, int) or interval_minutes <= 0:
-        raise ValueError("interval_minutes must be a positive integer")
-    try:
-        duration = (end_dt - start_dt).total_seconds()
-    except TypeError as exc:
-        raise ValueError("start_iso and end_iso must use compatible timezones") from exc
+    start_aware = start_input if start_input.tzinfo is not None else start_input.replace(tzinfo=timezone.utc)
+    end_aware = end_input if end_input.tzinfo is not None else end_input.replace(tzinfo=timezone.utc)
+    duration = (end_aware - start_aware).total_seconds()
     if duration <= 0:
         raise ValueError("end_iso must be after start_iso")
+    if isinstance(interval_minutes, bool) or not isinstance(interval_minutes, int) or interval_minutes <= 0:
+        raise ValueError("interval_minutes must be a positive integer")
     if duration > _MAX_FREEBUSY_DURATION_DAYS * 24 * 60 * 60:
         raise ValueError(f"Free/busy range cannot exceed {_MAX_FREEBUSY_DURATION_DAYS} days.")
     if any(not isinstance(email, str) for email in emails):
         raise ValueError("Each email must be a string.")
+
+    mapi = _core._mapi()
+    if account_email is not None:
+        _folders._find_store_for_account(account_email, mapi=mapi)
+    cfg = _core.get_effective_config(account_email)
     max_attendees = cfg.max_items
     if len(emails) > max_attendees:
         raise ValueError(f"Free/busy attendee count exceeds configured max_items ({max_attendees}).")
@@ -53,7 +63,8 @@ def check_freebusy(
         )
     valid_addresses = [email for email in emails if _EMAIL_VALIDATE_RE.match(email)]
     _assert_domains_allowed(valid_addresses, account_email=account_email)
-    mapi = _core._mapi()
+    start_dt = _freebusy_local_naive(start_input)
+    end_dt = _freebusy_local_naive(end_input)
     results = []
     for email in emails:
         if not _EMAIL_VALIDATE_RE.match(email):
