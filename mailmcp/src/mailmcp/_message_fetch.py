@@ -71,6 +71,10 @@ def list_folders(
     depth: int = 1,
     account_email: str | None = None,
 ) -> list[dict]:
+    if account_email is None and _core._account_overrides:
+        raise PermissionError(
+            "account_email is required for folder discovery when per-account Outlook policy is configured."
+        )
     cfg = get_effective_config(account_email)
     allowed = {name.lower() for name in cfg.allowlist_folders}
     mapi = _core._mapi()
