@@ -13,7 +13,18 @@ _MAX_FREEBUSY_DURATION_DAYS = 30
 _MAX_FREEBUSY_TOTAL_SLOTS = 10_000
 
 
-def check_freebusy(emails: list[str], start_iso: str, end_iso: str, interval_minutes: int = 30) -> dict:
+def check_freebusy(
+    emails: list[str],
+    start_iso: str,
+    end_iso: str,
+    interval_minutes: int = 30,
+    account_email: str | None = None,
+) -> dict:
+    if account_email is None and _core._account_overrides:
+        raise PermissionError(
+            "account_email is required when per-account Outlook policy is configured."
+        )
+    cfg = _core.get_effective_config(account_email)
     try:
         start_dt = datetime.fromisoformat(start_iso)
         end_dt = datetime.fromisoformat(end_iso)
@@ -31,7 +42,7 @@ def check_freebusy(emails: list[str], start_iso: str, end_iso: str, interval_min
         raise ValueError(f"Free/busy range cannot exceed {_MAX_FREEBUSY_DURATION_DAYS} days.")
     if any(not isinstance(email, str) for email in emails):
         raise ValueError("Each email must be a string.")
-    max_attendees = _core.get_config().max_items
+    max_attendees = cfg.max_items
     if len(emails) > max_attendees:
         raise ValueError(f"Free/busy attendee count exceeds configured max_items ({max_attendees}).")
     num_slots = max(1, math.ceil(duration / (interval_minutes * 60)))
@@ -41,18 +52,18 @@ def check_freebusy(emails: list[str], start_iso: str, end_iso: str, interval_min
             "Reduce attendees, duration, or increase interval_minutes."
         )
     valid_addresses = [email for email in emails if _EMAIL_VALIDATE_RE.match(email)]
-    _assert_domains_allowed(valid_addresses)
+    _assert_domains_allowed(valid_addresses, account_email=account_email)
     mapi = _core._mapi()
     results = []
     for email in emails:
         if not _EMAIL_VALIDATE_RE.match(email):
-            results.append({"email": _redact(email), "status": "invalid", "slots": []})
+            results.append({"email": _redact(email, account_email), "status": "invalid", "slots": []})
             continue
         try:
             recip = mapi.CreateRecipient(email)
             recip.Resolve()
             if not recip.Resolved:
-                results.append({"email": _redact(email), "status": "unresolved", "slots": []})
+                results.append({"email": _redact(email, account_email), "status": "unresolved", "slots": []})
                 continue
             midnight = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
             offset_slots = int((start_dt - midnight).total_seconds() / 60) // interval_minutes
@@ -66,9 +77,19 @@ def check_freebusy(emails: list[str], start_iso: str, end_iso: str, interval_min
                 slot_start = start_dt + timedelta(minutes=i * interval_minutes)
                 slot_end = min(end_dt, slot_start + timedelta(minutes=interval_minutes))
                 slots.append({"start": slot_start.isoformat(), "end": slot_end.isoformat(), "status": _FB_STATUS.get(ch, f"?({ch})")})
-            results.append({"email": _redact(email), "name": _redact(recip.Name), "status": "ok", "slots": slots})
+            results.append({
+                "email": _redact(email, account_email),
+                "name": _redact(recip.Name, account_email),
+                "status": "ok",
+                "slots": slots,
+            })
         except Exception as exc:
-            results.append({"email": _redact(email), "status": "error", "error": str(exc)[:120], "slots": []})
+            results.append({
+                "email": _redact(email, account_email),
+                "status": "error",
+                "error": str(exc)[:120],
+                "slots": [],
+            })
     return {"start": start_iso, "end": end_iso, "interval_minutes": interval_minutes, "attendees": results}
 
 
