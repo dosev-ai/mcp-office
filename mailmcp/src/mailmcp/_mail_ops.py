@@ -132,6 +132,8 @@ def get_conversation_thread(
 ) -> dict:
     if conversation_id is None and entry_id is None:
         raise ValueError("At least one of 'conversation_id' or 'entry_id' must be provided.")
+    if isinstance(max_items, bool) or not isinstance(max_items, int) or max_items < 0:
+        raise ValueError("max_items must be a non-negative integer.")
     effective_account = account_email.strip().lower() if isinstance(account_email, str) and account_email.strip() else None
     if entry_id is None and effective_account is None and _core._account_overrides:
         raise ValueError("account_email is required for conversation_id-only lookup when per-account policy is configured.")
@@ -161,6 +163,8 @@ def get_conversation_thread(
             conv_topic = getattr(source, "ConversationTopic", None)
         except Exception:
             pass
+    from mailmcp._messages import _all_folder_search_names
+    folder_names = _all_folder_search_names(cfg, effective_account)
     folder_resolver = (
         (lambda name: _folders._folder_by_name_for_account(name, account_email=effective_account))
         if effective_account is not None
@@ -168,7 +172,7 @@ def get_conversation_thread(
     )
     if conv_topic is None:
         scan_count = 0
-        for folder_name in cfg.allowlist_folders:
+        for folder_name in folder_names:
             try:
                 items = folder_resolver(folder_name).Items
                 for msg in items:
@@ -185,7 +189,7 @@ def get_conversation_thread(
     if conv_topic is None:
         return {"ok": True, "conversation_id": conversation_id, "count": 0, "messages": []}
     escaped_topic = _jet_escape(conv_topic)
-    for folder_name in cfg.allowlist_folders:
+    for folder_name in folder_names:
         try:
             restricted = folder_resolver(folder_name).Items.Restrict(f"[ConversationTopic] = '{escaped_topic}'")
             for msg in restricted:
