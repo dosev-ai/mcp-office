@@ -48,8 +48,9 @@ def check_freebusy(
     if any(not isinstance(email, str) for email in emails):
         raise ValueError("Each email must be a string.")
 
-    mapi = _core._mapi()
+    mapi = None
     if account_email is not None:
+        mapi = _core._mapi()
         _folders._find_store_for_account(account_email, mapi=mapi)
     cfg = _core.get_effective_config(account_email)
     max_attendees = cfg.max_items
@@ -63,6 +64,8 @@ def check_freebusy(
         )
     valid_addresses = [email for email in emails if _EMAIL_VALIDATE_RE.match(email)]
     _assert_domains_allowed(valid_addresses, account_email=account_email)
+    if mapi is None:
+        mapi = _core._mapi()
     start_dt = _freebusy_local_naive(start_input)
     end_dt = _freebusy_local_naive(end_input)
     results = []
