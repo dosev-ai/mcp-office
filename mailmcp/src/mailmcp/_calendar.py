@@ -50,7 +50,7 @@ def list_calendar_events(
         raise ValueError("'end' must be after 'start'.")
     start_str = _format_outlook_date(start_dt)
     end_str = _format_outlook_date(end_dt)
-    filter_str = f"[Start] >= '{start_str}' AND [Start] <= '{end_str}'"
+    filter_str = f"[Start] <= '{end_str}' AND [End] >= '{start_str}'"
     cal = _folders._get_calendar_folder(account_email=account_email)
     items = cal.Items
     items.IncludeRecurrences = True
@@ -183,6 +183,16 @@ def update_calendar_event(entry_id: str, subject: str | None = None, start_iso: 
             raise RuntimeError(f"Failed to update calendar attendees: {exc}") from exc
         if not resolved:
             raise RuntimeError("One or more attendee addresses could not be resolved.")
+        resolved_addresses: list[str] = []
+        for index in range(1, item.Recipients.Count + 1):
+            recipient = item.Recipients.Item(index)
+            if getattr(recipient, "Type", None) not in recipient_types_to_replace:
+                continue
+            address_entry = getattr(recipient, "AddressEntry", None)
+            if address_entry is None:
+                raise PermissionError("Cannot verify a resolved calendar attendee.")
+            resolved_addresses.append(_core._resolve_smtp_from_entry(address_entry))
+        _core._assert_domains_allowed(resolved_addresses, account_email=account_email)
     item.Save()
     result = _folders._appointment_to_dict(item, include_body=True, account_email=account_email)
     result["status"] = "updated"
