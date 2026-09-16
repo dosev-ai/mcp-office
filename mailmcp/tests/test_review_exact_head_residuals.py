@@ -97,6 +97,7 @@ def test_freebusy_rechecks_resolved_recipient_domain_before_query(monkeypatch, m
     ))
     freebusy = Mock(return_value="0000")
     recipient = SimpleNamespace(
+        Resolve=Mock(),
         Resolved=True,
         AddressEntry=SimpleNamespace(),
         Name="Synthetic Alias",
