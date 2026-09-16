@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import replace
 from types import SimpleNamespace
 from unittest.mock import Mock
 
@@ -45,6 +46,7 @@ def test_default_mailbox_stats_require_account_scope():
 
 
 def test_freebusy_uses_effective_account_policy(monkeypatch, mailbox):
+    _core.set_config(replace(_core.get_config(), allowlist_domains=["allowed.example"]))
     email = _install_account_override(
         redact_mode="emails",
         max_items=1,
