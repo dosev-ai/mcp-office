@@ -65,6 +65,11 @@ def check_freebusy(
             if not recip.Resolved:
                 results.append({"email": _redact(email, account_email), "status": "unresolved", "slots": []})
                 continue
+            address_entry = getattr(recip, "AddressEntry", None)
+            if address_entry is None:
+                raise PermissionError("Cannot verify the resolved free/busy recipient.")
+            resolved_smtp = _core._resolve_smtp_from_entry(address_entry)
+            _assert_domains_allowed([resolved_smtp], account_email=account_email)
             midnight = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
             offset_slots = int((start_dt - midnight).total_seconds() / 60) // interval_minutes
             fb_str = recip.FreeBusy(midnight, interval_minutes, True)
