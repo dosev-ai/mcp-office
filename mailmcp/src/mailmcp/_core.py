@@ -15,6 +15,7 @@ _DOMAIN_ALLOWLIST_RE = re.compile(
     r"^(?=.{1,253}\Z)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\Z",
     re.IGNORECASE,
 )
+_ACCOUNT_EMAIL_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\Z')
 _REDACT_ORDER: list[str] = ["none", "emails", "emails+domains"]
 
 
@@ -162,9 +163,12 @@ def _parse_account_overrides() -> dict[str, OutlookAccountOverride]:
     overrides: dict[str, OutlookAccountOverride] = {}
     for n in range(1, 11):
         prefix = f"OUTLOOK_ACCOUNT_{n}_"
-        email = os.environ.get(f"{prefix}EMAIL", "").strip().lower()
+        email_key = f"{prefix}EMAIL"
+        email = os.environ.get(email_key, "").strip().lower()
         if not email:
             continue
+        if not _ACCOUNT_EMAIL_RE.fullmatch(email):
+            raise ValueError(f"{email_key} must be a valid email address.")
         domain_key = f"{prefix}ALLOWLIST_DOMAINS"
         overrides[email] = OutlookAccountOverride(
             email=email,
@@ -353,7 +357,7 @@ def get_effective_config(account_email: str | None = None) -> OutlookConfig:
 
 _EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
 _DOMAIN_RE = re.compile(r"\b(?:[a-zA-Z0-9\-]+\.)+[a-zA-Z]{2,}\b")
-_EMAIL_VALIDATE_RE = re.compile(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}\Z')
+_EMAIL_VALIDATE_RE = _ACCOUNT_EMAIL_RE
 
 
 def _redact(text: str, account_email: str | None = None) -> str:
