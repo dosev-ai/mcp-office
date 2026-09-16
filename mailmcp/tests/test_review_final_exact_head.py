@@ -55,6 +55,7 @@ def test_freebusy_converts_requested_range_to_local_wall_time(mailbox):
 
 
 def test_calendar_listing_uses_interval_overlap_filter(monkeypatch):
+    _core.set_config(_core.OutlookConfig(allowlist_folders=["Calendar"]))
     items = SimpleNamespace(Sort=Mock(), Restrict=Mock(return_value=[]))
     calendar_folder = SimpleNamespace(Items=items)
     monkeypatch.setattr(_folders, "_get_calendar_folder", lambda account_email=None: calendar_folder)
