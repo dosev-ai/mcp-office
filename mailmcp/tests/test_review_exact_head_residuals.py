@@ -117,7 +117,9 @@ def test_freebusy_rechecks_resolved_recipient_domain_before_query(monkeypatch, m
     )
 
     assert result["attendees"][0]["status"] == "error"
-    assert "not allowed" in result["attendees"][0]["error"].lower()
+    error = result["attendees"][0]["error"].lower()
+    assert "blocked.example" in error
+    assert "outlook_allowlist_domains" in error
     freebusy.assert_not_called()
 
 
