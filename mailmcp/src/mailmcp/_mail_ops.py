@@ -164,7 +164,7 @@ def get_conversation_thread(
         except Exception:
             pass
     from mailmcp._messages import _all_folder_search_names
-    folder_names = _all_folder_search_names(cfg, effective_account)
+    folder_names = _all_folder_search_names(effective_account)
     folder_resolver = (
         (lambda name: _folders._folder_by_name_for_account(name, account_email=effective_account))
         if effective_account is not None
@@ -234,6 +234,10 @@ def mark_junk(entry_id: str, confirm: bool = False, account_email: str | None = 
 
 
 def _get_rules_collection(account_email: str | None = None):
+    if account_email is None and _core._account_overrides:
+        raise PermissionError(
+            "account_email is required for forwarding-rule operations when per-account Outlook policy is configured."
+        )
     mapi = _core._mapi()
     if account_email is None:
         store = getattr(mapi, "DefaultStore", None)
