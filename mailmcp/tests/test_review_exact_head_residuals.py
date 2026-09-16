@@ -90,6 +90,36 @@ def test_freebusy_uses_effective_account_policy(monkeypatch):
     assert captured["account_email"] == email
 
 
+def test_freebusy_rechecks_resolved_recipient_domain_before_query(monkeypatch, mailbox):
+    _core.set_config(_core.OutlookConfig(
+        allowlist_domains=["allowed.example"],
+        max_items=10,
+    ))
+    freebusy = Mock(return_value="0000")
+    recipient = SimpleNamespace(
+        Resolved=True,
+        AddressEntry=SimpleNamespace(),
+        Name="Synthetic Alias",
+        FreeBusy=freebusy,
+    )
+    mailbox.mapi.CreateRecipient.return_value = recipient
+    monkeypatch.setattr(
+        _core,
+        "_resolve_smtp_from_entry",
+        lambda _entry: "resolved@blocked.example",
+    )
+
+    result = _mail_calendar.check_freebusy(
+        ["alias@allowed.example"],
+        "2026-09-16T09:00:00+00:00",
+        "2026-09-16T10:00:00+00:00",
+    )
+
+    assert result["attendees"][0]["status"] == "error"
+    assert "not allowed" in result["attendees"][0]["error"].lower()
+    freebusy.assert_not_called()
+
+
 def test_account_listing_redacts_with_each_store_policy(mailbox):
     _core.set_config(_core.OutlookConfig(redact_mode="none"))
     _install_account_override(redact_mode="emails")
@@ -98,6 +128,48 @@ def test_account_listing_redacts_with_each_store_policy(mailbox):
 
     assert accounts[0]["display_name"] == "[email]"
     assert accounts[1]["display_name"] == "owner-b@example.com"
+
+
+def test_folder_discovery_requires_account_scope_under_overrides():
+    _install_account_override()
+
+    with pytest.raises(PermissionError, match="account_email is required"):
+        _message_fetch.list_folders()
+
+
+def test_mailbox_stats_expands_wildcard_to_scoped_discovery(monkeypatch):
+    _core.set_config(_core.OutlookConfig(allowlist_folders=["*"]))
+    monkeypatch.setattr(
+        _message_fetch,
+        "list_folders",
+        lambda depth, account_email: [
+            {"name": "Inbox", "unread_count": 2, "item_count": 5},
+            {"name": "Archive", "unread_count": 1, "item_count": 7},
+        ],
+    )
+
+    result = _calendar.get_mailbox_stats()
+
+    assert result["folders"] == [
+        {"folder": "Inbox", "unread": 2, "total": 5},
+        {"folder": "Archive", "unread": 1, "total": 7},
+    ]
+    assert result["total_unread"] == 3
+    assert result["total_items"] == 12
+    assert result["errors"] == []
+
+
+def test_forwarding_rule_delete_requires_account_scope_under_overrides():
+    _core.set_config(_core.OutlookConfig(enable_rules=True))
+    email = _install_account_override()
+    _core._account_overrides[email] = _core.OutlookAccountOverride(
+        email=email,
+        allowlist_folders=["Inbox"],
+        enable_rules=False,
+    )
+
+    with pytest.raises(PermissionError, match="account_email is required"):
+        _mail_ops.delete_forwarding_rule("1", confirm=True)
 
 
 def test_conversation_rejects_negative_max_items():
@@ -122,7 +194,7 @@ def test_conversation_expands_wildcard_before_folder_resolution(monkeypatch):
         resolved_names.append(name)
         return SimpleNamespace(Items=Items([message]))
 
-    monkeypatch.setattr(_messages, "_all_folder_search_names", lambda cfg, account_email: ["Inbox"])
+    monkeypatch.setattr(_messages, "_all_folder_search_names", lambda account_email: ["Inbox"])
     monkeypatch.setattr(_mail_ops._folders, "_folder_by_name", _resolve)
 
     result = _mail_ops.get_conversation_thread(conversation_id="synthetic-conversation")
