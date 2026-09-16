@@ -52,7 +52,7 @@ def list_accounts() -> list[dict]:
         smtp_addr = smtp_by_display.get(display_name.lower(), "")
         effective_cfg = _core.get_effective_config(smtp_addr if smtp_addr else None)
         result.append({
-            "display_name": _redact(display_name),
+            "display_name": _redact(display_name, smtp_addr if smtp_addr else None),
             "exchange_store_type": getattr(store, "ExchangeStoreType", None),
             "config_profile": {
                 "allowlist_folders": effective_cfg.allowlist_folders,
