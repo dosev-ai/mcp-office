@@ -6,6 +6,7 @@ from unittest.mock import Mock
 import pytest
 
 from mailmcp import (
+    _calendar,
     _categories,
     _core,
     _folders,
@@ -415,7 +416,10 @@ def test_search_all_folders_zero_max_items_short_circuits(monkeypatch):
     discovery.assert_not_called()
 
 
-def test_composite_category_list_uses_account_redaction(monkeypatch):
+def test_composite_category_list_uses_verified_account_redaction(
+    monkeypatch,
+    mailbox,
+):
     _core.set_config(
         _core.OutlookConfig(
             redact_mode="none",
@@ -427,19 +431,27 @@ def test_composite_category_list_uses_account_redaction(monkeypatch):
             redact_mode="emails",
         )
     )
+    mailbox.mapi.Categories = [
+        SimpleNamespace(
+            Name="person@example.com",
+            Color=1,
+            ShortcutKey=0,
+        )
+    ]
     monkeypatch.setattr(
         _categories,
         "_mapi",
-        lambda: SimpleNamespace(
-            Categories=[
-                SimpleNamespace(
-                    Name="person@example.com",
-                    Color=1,
-                    ShortcutKey=0,
-                )
-            ]
-        ),
+        lambda: mailbox.mapi,
     )
+
+    with pytest.raises(PermissionError, match="account_email is required"):
+        _task_category_ops.outlook_category("list")
+
+    with pytest.raises(ValueError, match="Account not found"):
+        _task_category_ops.outlook_category(
+            "list",
+            account_email="unknown@example.com",
+        )
 
     result = _task_category_ops.outlook_category(
         "list",
@@ -447,3 +459,137 @@ def test_composite_category_list_uses_account_redaction(monkeypatch):
     )
 
     assert result["categories"][0]["name"] == "[email]"
+
+
+def test_shared_delivery_store_rejected_for_scoped_operations(mailbox):
+    mailbox.mapi.Accounts[1].DeliveryStore = mailbox.stores[0]
+
+    with pytest.raises(PermissionError, match="Cannot resolve Outlook store"):
+        _folders._find_store_for_account(
+            "owner-a@example.com",
+            mapi=mailbox.mapi,
+        )
+
+    with pytest.raises(PermissionError, match="does not belong"):
+        _folders._assert_object_belongs_to_account(
+            mailbox.item,
+            "owner-a@example.com",
+            object_label="message",
+        )
+
+
+def test_duplicate_account_override_identifier_is_rejected(monkeypatch):
+    monkeypatch.setenv(
+        "OUTLOOK_ACCOUNT_1_EMAIL",
+        "Owner-A@example.com",
+    )
+    monkeypatch.setenv(
+        "OUTLOOK_ACCOUNT_2_EMAIL",
+        "owner-a@example.com",
+    )
+
+    with pytest.raises(ValueError, match="duplicates an earlier"):
+        _core._parse_account_overrides()
+
+
+def test_folder_discovery_and_wildcard_stats_redact_names(mailbox):
+    sensitive = mailbox.folders[("a", "Inbox")]
+    sensitive.Name = "person@example.com"
+    for suffix in ("a", "b"):
+        for name in (
+            "Deleted Items",
+            "Inbox",
+            "Calendar",
+            "Contacts",
+            "Drafts",
+            "Junk Email",
+        ):
+            folder = mailbox.folders[(suffix, name)]
+            folder.UnReadItemCount = 0
+            folder.Items.Count = 0
+
+    _core.set_config(
+        _core.OutlookConfig(
+            allowlist_folders=["person@example.com"],
+            redact_mode="emails",
+        )
+    )
+
+    discovered = _message_fetch.list_folders(
+        account_email="owner-a@example.com",
+    )
+
+    assert discovered == [
+        {
+            "name": "[email]",
+            "unread_count": 0,
+            "item_count": 0,
+        }
+    ]
+
+    _core.set_config(
+        _core.OutlookConfig(
+            allowlist_folders=["*"],
+            redact_mode="emails",
+        )
+    )
+    stats = _calendar.get_mailbox_stats(
+        account_email="owner-a@example.com",
+    )
+
+    assert any(row["folder"] == "[email]" for row in stats["folders"])
+    assert all(
+        "person@example.com" not in row["folder"]
+        for row in stats["folders"]
+    )
+
+
+def test_conversation_result_scan_has_exact_global_cap(mailbox, monkeypatch):
+    _core.set_config(
+        _core.OutlookConfig(
+            allowlist_folders=["Inbox"],
+            max_items=2,
+        )
+    )
+    mailbox.item.Parent = mailbox.folders[("a", "Inbox")]
+    mailbox.item.ConversationID = "synthetic-conversation"
+    mailbox.item.ConversationTopic = "Synthetic topic"
+
+    class Restricted:
+        def __init__(self, total):
+            self.total = total
+            self.yielded = 0
+
+        def __iter__(self):
+            for index in range(self.total):
+                self.yielded += 1
+                yield SimpleNamespace(
+                    ConversationID="synthetic-conversation",
+                    EntryID=f"message-{index}",
+                    Subject="Synthetic",
+                    SenderName="Synthetic",
+                    SenderEmailType="SMTP",
+                    SenderEmailAddress="person@example.com",
+                    ReceivedTime=None,
+                    Body="Synthetic body",
+                )
+
+    restricted = Restricted(600)
+
+    class Items:
+        def Restrict(self, _query):
+            return restricted
+
+    monkeypatch.setattr(
+        _mail_ops._folders,
+        "_folder_by_name",
+        lambda _name: SimpleNamespace(Items=Items()),
+    )
+
+    result = _mail_ops.get_conversation_thread(
+        entry_id="synthetic-item",
+        max_items=2,
+    )
+
+    assert restricted.yielded == _mail_ops._MAX_THREAD_SCAN_ITEMS
+    assert result["count"] == 2
