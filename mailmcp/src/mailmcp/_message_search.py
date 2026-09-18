@@ -94,7 +94,13 @@ def outlook_search_all_folders(
     timeout_seconds: int = 30,
     account_email: str | None = None,
 ) -> dict:
-    timeout_seconds = max(1, min(timeout_seconds, 300))
+    if (
+        isinstance(timeout_seconds, bool)
+        or not isinstance(timeout_seconds, int)
+        or timeout_seconds <= 0
+    ):
+        raise ValueError("timeout_seconds must be a positive integer.")
+    timeout_seconds = min(timeout_seconds, 300)
     detailed_kwargs = {
         "query": query,
         "subject": subject,
