@@ -80,12 +80,24 @@ def handle_message_action(
 
 def outlook_message_action(
     operation: str, entry_id: str, target_folder: str | None = None,
-    flag_status: str | None = None, read: bool = True, permanent: bool = False,
+    flag_status: str | None = None, read: bool | None = None, permanent: bool = False,
     confirm: bool = False, account_email: str | None = None,
 ) -> dict:
-    del read
+    op = operation.strip().lower()
+    if read is not None:
+        if not isinstance(read, bool):
+            raise ValueError("read must be a boolean when provided.")
+        if op not in {"mark_read", "mark_unread"}:
+            raise ValueError(
+                "read is only valid with operation='mark_read' or 'mark_unread'."
+            )
+        expected_read = op == "mark_read"
+        if read is not expected_read:
+            raise ValueError(
+                f"read={read!r} conflicts with operation={operation!r}."
+            )
     return handle_message_action(
-        operation=operation, entry_id=entry_id, target_folder=target_folder,
+        operation=op, entry_id=entry_id, target_folder=target_folder,
         flag_status=flag_status, permanent=permanent, confirm=confirm,
         account_email=account_email,
     )
