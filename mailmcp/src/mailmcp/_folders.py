@@ -171,10 +171,18 @@ def _store_matches_account(store: Any, account_email: str, account_index: dict[s
     normalized_account = _normalized_account_email(account_email)
     if normalized_account is None:
         return True
-    # Display labels are not account ownership evidence. A verifiable
-    # DeliveryStore ID is required for every explicitly scoped operation.
+    # Display labels are not account ownership evidence. A verifiable,
+    # uniquely owned DeliveryStore ID is required for explicitly scoped
+    # operations so a shared store cannot inherit the weaker of two policies.
     store_id = _store_id(store)
-    return bool(store_id and store_id in account_index["store_ids_by_smtp"].get(normalized_account, set()))
+    if not store_id:
+        return False
+    owners = {
+        smtp
+        for smtp, store_ids in account_index["store_ids_by_smtp"].items()
+        if store_id in store_ids
+    }
+    return owners == {normalized_account}
 
 
 def _find_store_for_account(account_email: str, mapi: Any | None = None) -> Any:
