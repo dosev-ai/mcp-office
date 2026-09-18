@@ -34,22 +34,16 @@ def health() -> dict:
 
 def list_accounts() -> list[dict]:
     mapi = _core._mapi()
-    smtp_by_display: dict[str, str] = {}
-    try:
-        for acct in mapi.Accounts:
-            try:
-                smtp = (getattr(acct, "SmtpAddress", "") or "").strip().lower()
-                display = (getattr(acct, "DisplayName", "") or "").strip()
-                if smtp and display:
-                    smtp_by_display[display.lower()] = smtp
-            except Exception:
-                pass
-    except Exception:
-        pass
+    account_index = _folders._build_account_store_index(mapi)
+    smtp_by_store_id = {
+        store_id: smtp
+        for smtp, store_ids in account_index["store_ids_by_smtp"].items()
+        for store_id in store_ids
+    }
     result = []
     for store in mapi.Stores:
         display_name = (store.DisplayName or "").strip()
-        smtp_addr = smtp_by_display.get(display_name.lower(), "")
+        smtp_addr = smtp_by_store_id.get(_folders._store_id(store), "")
         effective_cfg = _core.get_effective_config(smtp_addr if smtp_addr else None)
         result.append({
             "display_name": _redact(display_name, smtp_addr if smtp_addr else None),
