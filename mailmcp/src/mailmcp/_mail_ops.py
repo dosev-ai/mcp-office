@@ -181,6 +181,13 @@ def get_conversation_thread(
             raise ValueError(f"Message with entry_id={entry_id!r} has no ConversationID.")
     cfg = get_effective_config(effective_account)
     limit = min(max_items, cfg.max_items)
+    if limit == 0:
+        return {
+            "ok": True,
+            "conversation_id": conversation_id,
+            "count": 0,
+            "messages": [],
+        }
     messages: list[dict] = []
     conv_topic = None
     if entry_id is not None:
@@ -220,10 +227,16 @@ def get_conversation_thread(
     if conv_topic is None:
         return {"ok": True, "conversation_id": conversation_id, "count": 0, "messages": []}
     escaped_topic = _jet_escape(conv_topic)
+    result_scan_count = 0
+    result_scan_capped = False
     for folder_name in folder_names:
         try:
             restricted = folder_resolver(folder_name).Items.Restrict(f"[ConversationTopic] = '{escaped_topic}'")
             for msg in restricted:
+                if result_scan_count >= _MAX_THREAD_SCAN_ITEMS:
+                    result_scan_capped = True
+                    break
+                result_scan_count += 1
                 if getattr(msg, "ConversationID", None) != conversation_id:
                     continue
                 try:
@@ -239,6 +252,8 @@ def get_conversation_thread(
                     })
                 except Exception as exc:
                     logger.debug("Skipping message in conversation thread: %s", exc)
+            if result_scan_capped:
+                break
         except Exception as exc:
             logger.debug("Skipping folder %s in conversation thread: %s", folder_name, exc)
     messages.sort(key=lambda row: row["received_time"] or "9999")
