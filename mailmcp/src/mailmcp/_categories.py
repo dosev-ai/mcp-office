@@ -11,14 +11,14 @@ from mailmcp._formatters import _msg_header, _sql_escape
 logger = logging.getLogger(__name__)
 
 
-def list_categories() -> dict:
+def list_categories(account_email: str | None = None) -> dict:
     """List all Outlook master categories defined in the user's profile."""
     try:
         mapi = _mapi()
         result = []
         for cat in mapi.Categories:
             result.append({
-                "name":         _redact(str(cat.Name)),
+                "name":         _redact(str(cat.Name), account_email=account_email),
                 "color":        int(getattr(cat, "Color", 0)),
                 "shortcut_key": int(getattr(cat, "ShortcutKey", 0)),
             })
