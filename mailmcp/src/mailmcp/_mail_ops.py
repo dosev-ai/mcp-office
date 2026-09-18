@@ -9,6 +9,7 @@ from mailmcp._core import get_effective_config, _assert_allowed, _EMAIL_VALIDATE
 from mailmcp._formatters import _fmt_date, _resolve_sender_email
 from mailmcp._folders import _FLAG_STATUS_MAP
 from mailmcp._mail_calendar import _FB_STATUS as _FB_STATUS, check_freebusy as check_freebusy, create_meeting_draft as create_meeting_draft
+from mailmcp._mail_compose import _resolve_and_validate_recipients
 
 from mailmcp._item_guards import _assert_draft_item, _assert_mail_item
 
@@ -45,6 +46,35 @@ def _effective_account_for_item(item, account_email: str | None) -> str | None:
     return owners[0]
 
 
+def _folder_in_item_store(item, folder_name: str):
+    store = _folders._resolve_store_for_object(item)
+    if store is None:
+        raise PermissionError("Cannot resolve the message's source Outlook store.")
+    folder = _folders._find_folder_in_store(store, folder_name.strip().lower())
+    if folder is None:
+        raise ValueError(
+            f"Folder not found in the message's source Outlook store: {folder_name!r}"
+        )
+    return folder
+
+
+def _default_folder_in_item_store(item, folder_id: int, fallback_name: str):
+    store = _folders._resolve_store_for_object(item)
+    if store is None:
+        raise PermissionError("Cannot resolve the message's source Outlook store.")
+    try:
+        folder = store.GetDefaultFolder(folder_id)
+    except Exception:
+        folder = None
+    if folder is None:
+        folder = _folders._find_folder_in_store(store, fallback_name.lower())
+    if folder is None:
+        raise ValueError(
+            f"Default folder not found in the message's source Outlook store: {fallback_name!r}"
+        )
+    return folder
+
+
 def send_mail(entry_id: str, confirm: bool = False, account_email: str | None = None) -> dict:
     cfg = get_effective_config(account_email)
     if not cfg.enable_send:
@@ -57,10 +87,7 @@ def send_mail(entry_id: str, confirm: bool = False, account_email: str | None = 
     except Exception as exc:
         raise ValueError(f"Message not found (entry_id={entry_id!r})") from exc
     _assert_draft_item(msg, account_email)
-    recipients = []
-    for i in range(1, msg.Recipients.Count + 1):
-        recipients.append(_resolve_smtp_from_entry(msg.Recipients.Item(i).AddressEntry))
-    _assert_domains_allowed(recipients, account_email=account_email)
+    _resolve_and_validate_recipients(msg, account_email)
     msg.Send()
     return {"status": "sent", "entry_id": entry_id}
 
@@ -81,7 +108,11 @@ def move_message(entry_id: str, target_folder: str, confirm: bool = False, accou
         _assert_allowed(item.Parent.Name, account_email)
     except AttributeError as exc:
         raise ValueError(f"Cannot determine source folder for entry_id={entry_id!r}") from exc
-    target = _folders._folder_by_name_for_account(target_folder, account_email=account_email) if account_email is not None else _folders._folder_by_name(target_folder)
+    target = (
+        _folders._folder_by_name_for_account(target_folder, account_email=account_email)
+        if account_email is not None
+        else _folder_in_item_store(item, target_folder)
+    )
     moved = item.Move(target)
     new_entry_id = getattr(moved, "EntryID", entry_id) if moved is not None else entry_id
     return {"ok": True, "entry_id": new_entry_id, "moved_to": target_folder}
@@ -228,7 +259,15 @@ def mark_junk(entry_id: str, confirm: bool = False, account_email: str | None = 
     _assert_mail_item(item)
     _folders._assert_object_belongs_to_account(item, account_email, object_label="message")
     _assert_allowed(item.Parent.Name, account_email)
-    junk = _folders._get_junk_folder(account_email=account_email)
+    junk = (
+        _folders._get_junk_folder(account_email=account_email)
+        if account_email is not None
+        else _default_folder_in_item_store(
+            item,
+            _folders._OL_JUNK_EMAIL,
+            "Junk Email",
+        )
+    )
     moved = item.Move(junk)
     return {"ok": True, "entry_id": getattr(moved, "EntryID", entry_id) if moved is not None else entry_id, "moved_to": "Junk Email"}
 
