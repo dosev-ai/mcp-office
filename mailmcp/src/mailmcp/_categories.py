@@ -4,7 +4,7 @@ from __future__ import annotations
 import logging
 
 from mailmcp import _folders
-from mailmcp._core import _mapi, get_effective_config, _assert_allowed, _assert_write_enabled
+from mailmcp._core import _mapi, get_effective_config, _assert_allowed, _assert_write_enabled, _redact
 from mailmcp._folders import _folder_by_name, _folder_by_name_for_account
 from mailmcp._formatters import _msg_header, _sql_escape
 
@@ -18,7 +18,7 @@ def list_categories() -> dict:
         result = []
         for cat in mapi.Categories:
             result.append({
-                "name":         str(cat.Name),
+                "name":         _redact(str(cat.Name)),
                 "color":        int(getattr(cat, "Color", 0)),
                 "shortcut_key": int(getattr(cat, "ShortcutKey", 0)),
             })
