@@ -190,6 +190,15 @@ def search_all_folders_detailed(subject: str | None = None, sender: str | None =
         body_contains = query
     if not any([subject, sender, body_contains]):
         raise ValueError("At least one search filter (query, subject, sender, body_contains) must be provided.")
+    if limit == 0:
+        return {
+            "messages": [],
+            "errors": [],
+            "partial_results": False,
+            "any_folder_capped": False,
+            "folders_searched": 0,
+            "folders_total": 0,
+        }
     folder_names = _all_folder_search_names(account_email)
     if not folder_names:
         return {"messages": [], "errors": [], "partial_results": False, "any_folder_capped": False, "folders_searched": 0, "folders_total": 0}
