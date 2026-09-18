@@ -28,7 +28,13 @@ def list_calendar_events(
 ) -> list[dict]:
     _assert_allowed("Calendar", account_email)
     cfg = get_effective_config(account_email)
-    limit = min(top or cfg.max_items, cfg.max_items)
+    if top is not None and (
+        isinstance(top, bool) or not isinstance(top, int) or top <= 0
+    ):
+        raise ValueError("top must be a positive integer or None.")
+    limit = min(top, cfg.max_items) if top is not None else cfg.max_items
+    if limit == 0:
+        return []
     now = _dt.now()
     if start is None:
         start_dt = now
