@@ -35,15 +35,20 @@ def health() -> dict:
 def list_accounts() -> list[dict]:
     mapi = _core._mapi()
     account_index = _folders._build_account_store_index(mapi)
-    smtp_by_store_id = {
-        store_id: smtp
-        for smtp, store_ids in account_index["store_ids_by_smtp"].items()
-        for store_id in store_ids
-    }
+    owners_by_store_id: dict[str, list[str]] = {}
+    for smtp, store_ids in account_index["store_ids_by_smtp"].items():
+        for store_id in store_ids:
+            owners_by_store_id.setdefault(store_id, []).append(smtp)
     result = []
     for store in mapi.Stores:
         display_name = (store.DisplayName or "").strip()
-        smtp_addr = smtp_by_store_id.get(_folders._store_id(store), "")
+        store_id = _folders._store_id(store)
+        owners = sorted(set(owners_by_store_id.get(store_id, [])))
+        if len(owners) > 1:
+            raise PermissionError(
+                "Cannot uniquely resolve the Outlook account owner for a shared DeliveryStore."
+            )
+        smtp_addr = owners[0] if owners else ""
         effective_cfg = _core.get_effective_config(smtp_addr if smtp_addr else None)
         result.append({
             "display_name": _redact(display_name, smtp_addr if smtp_addr else None),
