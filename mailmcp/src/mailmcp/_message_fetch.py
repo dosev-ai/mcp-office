@@ -108,7 +108,7 @@ def list_folders(
                 child_name = str(getattr(child, "Name", "") or "").strip()
                 if child_name and ("*" in allowed or child_name.lower() in allowed):
                     result.append({
-                        "name": child_name,
+                        "name": _redact(child_name, account_email),
                         "unread_count": getattr(child, "UnReadItemCount", 0),
                         "item_count": getattr(child, "Items", None) and child.Items.Count or 0,
                     })
