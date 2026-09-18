@@ -8,13 +8,16 @@ import pytest
 from mailmcp import (
     _calendar,
     _categories,
+    _context,
     _core,
     _folders,
     _mail_calendar,
     _mail_compose,
     _mail_edit,
     _mail_ops,
+    _message_actions,
     _message_fetch,
+    _message_search,
     _messages,
     _task_category_ops,
     _tasks,
@@ -593,3 +596,132 @@ def test_conversation_result_scan_has_exact_global_cap(mailbox, monkeypatch):
 
     assert restricted.yielded == _mail_ops._MAX_THREAD_SCAN_ITEMS
     assert result["count"] == 2
+
+
+def test_calendar_rejects_nonpositive_explicit_top_and_honors_zero_config(
+    monkeypatch,
+):
+    _core.set_config(
+        _core.OutlookConfig(
+            allowlist_folders=["Calendar"],
+            max_items=10,
+        )
+    )
+    with pytest.raises(ValueError, match="positive integer"):
+        _calendar.list_calendar_events(top=0)
+
+    _core.set_config(
+        _core.OutlookConfig(
+            allowlist_folders=["Calendar"],
+            max_items=0,
+        )
+    )
+    resolver = Mock(
+        side_effect=AssertionError("calendar COM should not be touched")
+    )
+    monkeypatch.setattr(
+        _calendar._folders,
+        "_get_calendar_folder",
+        resolver,
+    )
+
+    assert _calendar.list_calendar_events() == []
+    resolver.assert_not_called()
+
+
+def test_zero_limit_mail_context_does_not_claim_more(monkeypatch):
+    _core.set_config(
+        _core.OutlookConfig(
+            allowlist_folders=["Inbox"],
+            max_items=0,
+        )
+    )
+
+    class Items(list):
+        def Sort(self, *args, **kwargs):
+            return None
+
+    monkeypatch.setattr(
+        _context,
+        "_folder_by_name_for_account",
+        lambda *args, **kwargs: SimpleNamespace(Items=Items()),
+    )
+
+    result = _context.get_mail_context(
+        folder="Inbox",
+        max_items=50,
+    )
+
+    assert result["limit"] == 0
+    assert result["returned_count"] == 0
+    assert result["maybe_more"] is False
+
+
+def test_message_action_rejects_conflicting_read_argument(monkeypatch):
+    dispatch = Mock()
+    monkeypatch.setattr(
+        _message_actions,
+        "handle_message_action",
+        dispatch,
+    )
+
+    with pytest.raises(ValueError, match="conflicts"):
+        _message_actions.outlook_message_action(
+            operation="mark_read",
+            entry_id="synthetic-item",
+            read=False,
+            confirm=True,
+        )
+
+    dispatch.assert_not_called()
+
+
+@pytest.mark.parametrize("timeout_seconds", [0, -1, True])
+def test_public_all_folder_search_rejects_invalid_timeout(
+    monkeypatch,
+    timeout_seconds,
+):
+    downstream = Mock(
+        side_effect=AssertionError("downstream search should not be called")
+    )
+    monkeypatch.setattr(
+        _message_search.ol,
+        "search_all_folders_detailed",
+        downstream,
+    )
+
+    with pytest.raises(ValueError, match="positive integer"):
+        _message_search.outlook_search_all_folders(
+            query="Synthetic",
+            timeout_seconds=timeout_seconds,
+        )
+
+    downstream.assert_not_called()
+
+
+def test_public_all_folder_search_caps_valid_timeout(monkeypatch):
+    captured = {}
+
+    def fake_search(**kwargs):
+        captured.update(kwargs)
+        return {
+            "messages": [],
+            "errors": [],
+            "partial_results": False,
+            "folders_searched": 0,
+            "folders_total": 0,
+            "any_folder_capped": False,
+        }
+
+    monkeypatch.setattr(
+        _message_search.ol,
+        "search_all_folders_detailed",
+        fake_search,
+    )
+
+    _message_search.outlook_search_all_folders(
+        query="Synthetic",
+        timeout_seconds=600,
+    )
+
+    assert captured["timeout_seconds"] == 300
