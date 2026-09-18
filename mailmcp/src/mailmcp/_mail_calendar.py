@@ -9,6 +9,7 @@ from mailmcp._core import _EMAIL_VALIDATE_RE, _redact, _assert_domains_allowed
 from mailmcp import _folders
 
 _FB_STATUS = {"0": "Free", "1": "Tentative", "2": "Busy", "3": "OOO", "4": "Working elsewhere"}
+_FB_STATUS_PRIORITY = {"0": 0, "4": 1, "1": 2, "2": 3, "3": 4}
 _MAX_FREEBUSY_DURATION_DAYS = 30
 _MAX_FREEBUSY_TOTAL_SLOTS = 10_000
 
@@ -18,6 +19,16 @@ def _freebusy_local_naive(value: datetime) -> datetime:
     if value.tzinfo is None:
         value = value.replace(tzinfo=timezone.utc)
     return value.astimezone().replace(tzinfo=None)
+
+
+def _combined_freebusy_status(provider_buckets: str) -> str:
+    if not provider_buckets:
+        raise RuntimeError("Outlook returned no free/busy data for the requested slot.")
+    unknown = next((ch for ch in provider_buckets if ch not in _FB_STATUS), None)
+    if unknown is not None:
+        return f"?({unknown})"
+    strongest = max(provider_buckets, key=lambda ch: _FB_STATUS_PRIORITY[ch])
+    return _FB_STATUS[strongest]
 
 
 def check_freebusy(
@@ -85,17 +96,24 @@ def check_freebusy(
             resolved_smtp = _core._resolve_smtp_from_entry(address_entry)
             _assert_domains_allowed([resolved_smtp], account_email=account_email)
             midnight = start_dt.replace(hour=0, minute=0, second=0, microsecond=0)
-            offset_slots = int((start_dt - midnight).total_seconds() / 60) // interval_minutes
+            interval_seconds = interval_minutes * 60
             fb_str = recip.FreeBusy(midnight, interval_minutes, True)
-            if offset_slots + num_slots > len(fb_str):
-                raise RuntimeError("Outlook returned incomplete free/busy data for the requested range.")
             slots = []
             for i in range(num_slots):
-                fb_index = offset_slots + i
-                ch = fb_str[fb_index]
                 slot_start = start_dt + timedelta(minutes=i * interval_minutes)
                 slot_end = min(end_dt, slot_start + timedelta(minutes=interval_minutes))
-                slots.append({"start": slot_start.isoformat(), "end": slot_end.isoformat(), "status": _FB_STATUS.get(ch, f"?({ch})")})
+                first_bucket = int((slot_start - midnight).total_seconds() // interval_seconds)
+                last_bucket_exclusive = math.ceil(
+                    (slot_end - midnight).total_seconds() / interval_seconds
+                )
+                if first_bucket < 0 or last_bucket_exclusive > len(fb_str):
+                    raise RuntimeError("Outlook returned incomplete free/busy data for the requested range.")
+                provider_buckets = fb_str[first_bucket:last_bucket_exclusive]
+                slots.append({
+                    "start": slot_start.isoformat(),
+                    "end": slot_end.isoformat(),
+                    "status": _combined_freebusy_status(provider_buckets),
+                })
             results.append({
                 "email": _redact(email, account_email),
                 "name": _redact(recip.Name, account_email),
