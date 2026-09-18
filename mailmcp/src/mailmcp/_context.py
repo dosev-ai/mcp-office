@@ -123,7 +123,7 @@ def get_mail_context(
         except Exception as exc:
             logger.warning("Skipping message in get_mail_context: %s", exc)
 
-    maybe_more = len(messages) >= limit
+    maybe_more = limit > 0 and len(messages) >= limit
     thread_map: dict[str | None, dict] = {}
     for msg in messages:
         cid = msg.get("conversation_id")
