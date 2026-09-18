@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 
-from mailmcp import _folders
+from mailmcp import _core, _folders
 from mailmcp._core import _mapi, get_effective_config, _assert_allowed, _assert_write_enabled, _redact
 from mailmcp._folders import _folder_by_name, _folder_by_name_for_account
 from mailmcp._formatters import _msg_header, _sql_escape
@@ -13,8 +13,14 @@ logger = logging.getLogger(__name__)
 
 def list_categories(account_email: str | None = None) -> dict:
     """List all Outlook master categories defined in the user's profile."""
+    if account_email is None and _core._account_overrides:
+        raise PermissionError(
+            "account_email is required for category listing when per-account Outlook policy is configured."
+        )
     try:
         mapi = _mapi()
+        if account_email is not None:
+            _folders._find_store_for_account(account_email, mapi=mapi)
         result = []
         for cat in mapi.Categories:
             result.append({
@@ -23,6 +29,8 @@ def list_categories(account_email: str | None = None) -> dict:
                 "shortcut_key": int(getattr(cat, "ShortcutKey", 0)),
             })
         return {"categories": result, "count": len(result)}
+    except (PermissionError, ValueError):
+        raise
     except Exception as exc:
         logger.error("list_categories failed: %s", exc)
         raise RuntimeError(f"Cannot read categories: {exc}") from exc
