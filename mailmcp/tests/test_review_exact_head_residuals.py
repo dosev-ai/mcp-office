@@ -9,6 +9,7 @@ import pytest
 from mailmcp import (
     _calendar,
     _calendar_ops,
+    _categories,
     _core,
     _mail_calendar,
     _mail_compose,
@@ -96,6 +97,7 @@ def test_freebusy_rechecks_resolved_recipient_domain_before_query(monkeypatch, m
     _core.set_config(_core.OutlookConfig(
         allowlist_domains=["allowed.example"],
         max_items=10,
+        redact_mode="emails",
     ))
     freebusy = Mock(return_value="0000")
     recipient = SimpleNamespace(
@@ -120,8 +122,9 @@ def test_freebusy_rechecks_resolved_recipient_domain_before_query(monkeypatch, m
 
     assert result["attendees"][0]["status"] == "error"
     error = result["attendees"][0]["error"].lower()
-    assert "blocked.example" in error
-    assert "outlook_allowlist_domains" in error
+    assert "resolved@blocked.example" not in error
+    assert "blocked.example" not in error
+    assert "policy" in error
     freebusy.assert_not_called()
 
 
@@ -133,6 +136,92 @@ def test_account_listing_redacts_with_each_store_policy(mailbox):
 
     assert accounts[0]["display_name"] == "[email]"
     assert accounts[1]["display_name"] == "owner-b@example.com"
+
+
+def test_account_listing_uses_delivery_store_identity_not_display_label(mailbox):
+    _core.set_config(_core.OutlookConfig(redact_mode="none"))
+    _install_account_override(redact_mode="emails")
+    mailbox.mapi.Accounts[0].DisplayName = "Different account label"
+
+    accounts = _message_fetch.list_accounts()
+
+    assert accounts[0]["display_name"] == "[email]"
+    assert accounts[0]["config_profile"]["is_override"] is True
+
+
+
+def test_meeting_draft_rechecks_resolved_recipient_domain_before_save(monkeypatch):
+    _core.set_config(_core.OutlookConfig(
+        allowlist_folders=["Calendar"],
+        allowlist_domains=["allowed.example"],
+        enable_write=True,
+    ))
+
+    class DraftRecipients:
+        def __init__(self):
+            self.rows = []
+            self.ResolveAll = Mock(return_value=True)
+
+        @property
+        def Count(self):
+            return len(self.rows)
+
+        def Add(self, address):
+            row = SimpleNamespace(
+                Type=1,
+                AddressEntry=SimpleNamespace(Address=address),
+            )
+            self.rows.append(row)
+            return row
+
+        def Item(self, index):
+            return self.rows[index - 1]
+
+    appointment = SimpleNamespace(
+        Recipients=DraftRecipients(),
+        Save=Mock(),
+        EntryID="synthetic-meeting",
+        OnlineMeetingUrl=None,
+    )
+    outlook = SimpleNamespace(CreateItem=Mock(return_value=appointment))
+    monkeypatch.setattr(_mail_calendar._core, "_get_outlook", lambda: outlook)
+    monkeypatch.setattr(
+        _core,
+        "_resolve_smtp_from_entry",
+        lambda _entry: "resolved@blocked.example",
+    )
+
+    with pytest.raises(PermissionError, match="blocked.example"):
+        _mail_calendar.create_meeting_draft(
+            subject="Synthetic",
+            start_iso="2026-09-16T09:00:00+00:00",
+            end_iso="2026-09-16T10:00:00+00:00",
+            required=["alias@allowed.example"],
+            is_teams=False,
+            confirm=True,
+        )
+
+    appointment.Recipients.ResolveAll.assert_called_once_with()
+    appointment.Save.assert_not_called()
+
+
+def test_category_listing_redacts_master_category_names(monkeypatch):
+    _core.set_config(_core.OutlookConfig(redact_mode="emails+domains"))
+    monkeypatch.setattr(
+        _categories,
+        "_mapi",
+        lambda: SimpleNamespace(Categories=[
+            SimpleNamespace(
+                Name="person@example.com / example.net",
+                Color=1,
+                ShortcutKey=0,
+            ),
+        ]),
+    )
+
+    result = _categories.list_categories()
+
+    assert result["categories"][0]["name"] == "[email] / [domain]"
 
 
 def test_folder_discovery_requires_account_scope_under_overrides():
