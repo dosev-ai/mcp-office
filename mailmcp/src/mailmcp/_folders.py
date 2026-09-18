@@ -388,7 +388,7 @@ def _appointment_to_dict(apt: Any, include_body: bool = False, account_email: st
         "is_recurring": bool(getattr(apt, "IsRecurring", False)),
         "required_attendees": _redact(getattr(apt, "RequiredAttendees", "") or "", account_email=account_email),
         "optional_attendees": _redact(getattr(apt, "OptionalAttendees", "") or "", account_email=account_email),
-        "categories": getattr(apt, "Categories", "") or "",
+        "categories": _redact(getattr(apt, "Categories", "") or "", account_email=account_email),
         "sensitivity": getattr(apt, "Sensitivity", 0),
         "importance": getattr(apt, "Importance", 1),
     }
