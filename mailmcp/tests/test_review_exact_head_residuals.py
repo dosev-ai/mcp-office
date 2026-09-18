@@ -314,11 +314,18 @@ def test_forward_draft_redacts_outlook_derived_subject(mailbox):
         def Count(self):
             return len(self.rows)
 
+        def Item(self, index):
+            return self.rows[index - 1]
+
         def Remove(self, index):
             del self.rows[index - 1]
 
         def Add(self, address):
-            row = SimpleNamespace(Type=1, Address=address)
+            row = SimpleNamespace(
+                Type=1,
+                Address=address,
+                AddressEntry=SimpleNamespace(Address=address),
+            )
             self.rows.append(row)
             return row
 
