@@ -102,11 +102,18 @@ def check_freebusy(
                 "status": "ok",
                 "slots": slots,
             })
+        except PermissionError:
+            results.append({
+                "email": _redact(email, account_email),
+                "status": "error",
+                "error": "Resolved recipient failed the configured Outlook policy check.",
+                "slots": [],
+            })
         except Exception as exc:
             results.append({
                 "email": _redact(email, account_email),
                 "status": "error",
-                "error": str(exc)[:120],
+                "error": _redact(str(exc), account_email)[:120],
                 "slots": [],
             })
     return {"start": start_iso, "end": end_iso, "interval_minutes": interval_minutes, "attendees": results}
@@ -168,6 +175,21 @@ def create_meeting_draft(
     for email in (optional or []):
         recip = appt.Recipients.Add(email)
         recip.Type = 2
+    try:
+        if not appt.Recipients.ResolveAll():
+            raise PermissionError("Cannot resolve all meeting recipients.")
+    except PermissionError:
+        raise
+    except Exception as exc:
+        raise PermissionError("Cannot resolve all meeting recipients.") from exc
+    resolved_addresses = []
+    for index in range(1, appt.Recipients.Count + 1):
+        recipient = appt.Recipients.Item(index)
+        address_entry = getattr(recipient, "AddressEntry", None)
+        if address_entry is None:
+            raise PermissionError("Cannot verify a resolved meeting recipient.")
+        resolved_addresses.append(_core._resolve_smtp_from_entry(address_entry))
+    _assert_domains_allowed(resolved_addresses, account_email=account_email)
     if is_teams:
         try:
             appt.IsOnlineMeeting = True
