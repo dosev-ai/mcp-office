@@ -7,6 +7,7 @@ from mailmcp import _core
 from mailmcp._core import _EMAIL_VALIDATE_RE, _assert_domains_allowed
 from mailmcp._formatters import _text_to_html
 from mailmcp._item_guards import _assert_draft_item
+from mailmcp._mail_compose import _resolve_and_validate_recipients
 
 logger = logging.getLogger(__name__)
 
@@ -61,5 +62,6 @@ def edit_draft(
         mail.CC = "; ".join(cc)
     if bcc is not None:
         mail.BCC = "; ".join(bcc)
+    _resolve_and_validate_recipients(mail, account_email)
     mail.Save()
     return {"status": "draft_updated", "entry_id": mail.EntryID, "subject": _core._redact(mail.Subject, account_email)}
