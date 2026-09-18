@@ -169,6 +169,10 @@ def _parse_account_overrides() -> dict[str, OutlookAccountOverride]:
             continue
         if not _ACCOUNT_EMAIL_RE.fullmatch(email):
             raise ValueError(f"{email_key} must be a valid email address.")
+        if email in overrides:
+            raise ValueError(
+                f"{email_key} duplicates an earlier OUTLOOK_ACCOUNT_N_EMAIL entry for {email!r}."
+            )
         domain_key = f"{prefix}ALLOWLIST_DOMAINS"
         overrides[email] = OutlookAccountOverride(
             email=email,
