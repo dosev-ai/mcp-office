@@ -6,12 +6,16 @@ from unittest.mock import Mock
 import pytest
 
 from mailmcp import (
+    _categories,
     _core,
     _folders,
     _mail_calendar,
     _mail_compose,
     _mail_edit,
+    _mail_ops,
     _message_fetch,
+    _messages,
+    _task_category_ops,
     _tasks,
 )
 
@@ -330,3 +334,116 @@ def test_task_and_meeting_request_categories_use_account_redaction(monkeypatch):
     request_result = _tasks.list_meeting_requests()
 
     assert request_result["requests"][0]["categories"] == "[email] / [domain]"
+
+
+def test_send_rechecks_resolved_recipients_before_send(
+    monkeypatch,
+    mailbox,
+):
+    mailbox.item.Parent = mailbox.folders[("a", "Drafts")]
+    mailbox.item.Recipients = _Recipients(["alias@example.com"])
+    guard = Mock(side_effect=PermissionError("resolved recipient blocked"))
+    monkeypatch.setattr(
+        _mail_ops,
+        "_resolve_and_validate_recipients",
+        guard,
+    )
+
+    with pytest.raises(PermissionError, match="resolved recipient blocked"):
+        _mail_ops.send_mail(
+            "synthetic-item",
+            confirm=True,
+        )
+
+    guard.assert_called_once_with(mailbox.item, None)
+    mailbox.item.Send.assert_not_called()
+
+
+def test_unscoped_move_stays_in_source_store(mailbox):
+    mailbox.item.Parent = mailbox.folders[("b", "Inbox")]
+
+    _mail_ops.move_message(
+        "synthetic-item",
+        target_folder="Deleted Items",
+        confirm=True,
+    )
+
+    mailbox.item.Move.assert_called_once_with(
+        mailbox.folders[("b", "Deleted Items")]
+    )
+
+
+def test_unscoped_mark_junk_stays_in_source_store(mailbox):
+    mailbox.item.Parent = mailbox.folders[("b", "Inbox")]
+
+    _mail_ops.mark_junk(
+        "synthetic-item",
+        confirm=True,
+    )
+
+    mailbox.item.Move.assert_called_once_with(
+        mailbox.folders[("b", "Junk Email")]
+    )
+
+
+def test_search_all_folders_zero_max_items_short_circuits(monkeypatch):
+    _core.set_config(
+        _core.OutlookConfig(
+            allowlist_folders=["Inbox"],
+            max_items=0,
+        )
+    )
+    discovery = Mock(side_effect=AssertionError("folder search should not start"))
+    monkeypatch.setattr(
+        _messages,
+        "_all_folder_search_names",
+        discovery,
+    )
+
+    result = _messages.search_all_folders_detailed(
+        query="Synthetic",
+    )
+
+    assert result == {
+        "messages": [],
+        "errors": [],
+        "partial_results": False,
+        "any_folder_capped": False,
+        "folders_searched": 0,
+        "folders_total": 0,
+    }
+    discovery.assert_not_called()
+
+
+def test_composite_category_list_uses_account_redaction(monkeypatch):
+    _core.set_config(
+        _core.OutlookConfig(
+            redact_mode="none",
+        )
+    )
+    _core._account_overrides["owner-a@example.com"] = (
+        _core.OutlookAccountOverride(
+            email="owner-a@example.com",
+            redact_mode="emails",
+        )
+    )
+    monkeypatch.setattr(
+        _categories,
+        "_mapi",
+        lambda: SimpleNamespace(
+            Categories=[
+                SimpleNamespace(
+                    Name="person@example.com",
+                    Color=1,
+                    ShortcutKey=0,
+                )
+            ]
+        ),
+    )
+
+    result = _task_category_ops.outlook_category(
+        "list",
+        account_email="owner-a@example.com",
+    )
+
+    assert result["categories"][0]["name"] == "[email]"
