@@ -34,6 +34,7 @@ def compose_mail(to: list[str], subject: str, body: str, html_body: str | None =
     for path in validated_attachment_paths:
         mail.Attachments.Add(str(path))
     mail.HTMLBody = html_body if html_body is not None else _text_to_html(body)
+    _resolve_and_validate_recipients(mail, account_email)
     mail.Save()
     if not mail.EntryID:
         raise ValueError("mail.Save() did not produce an EntryID; cannot construct artifact_id.")
@@ -68,9 +69,26 @@ def _resolved_reply_addresses(reply) -> list[str]:
         address_entry = getattr(recipient, "AddressEntry", None)
         if address_entry is None:
             raise PermissionError(
-                "Cannot resolve a reply recipient address entry. Draft creation blocked for safety."
+                "Cannot resolve a draft recipient address entry. Draft creation blocked for safety."
             )
         addresses.append(_resolve_smtp_from_entry(address_entry))
+    return addresses
+
+
+def _resolve_and_validate_recipients(item, account_email: str | None = None) -> list[str]:
+    try:
+        resolved = item.Recipients.ResolveAll()
+    except Exception as exc:
+        raise PermissionError(
+            "Cannot resolve all draft recipients. Draft creation blocked for safety."
+        ) from exc
+    if resolved is False:
+        raise PermissionError(
+            "Cannot resolve all draft recipients. Draft creation blocked for safety."
+        )
+    addresses = _resolved_reply_addresses(item)
+    if addresses:
+        _assert_domains_allowed(addresses, account_email=account_email)
     return addresses
 
 
@@ -92,17 +110,13 @@ def reply_all_draft(entry_id: str, body: str, html_body: str | None = None, cc: 
     _assert_allowed(parent_name, account_email)
     _assert_allowed("Drafts", account_email)
     reply = orig.ReplyAll()
-    auto_addrs = _resolved_reply_addresses(reply)
-    if auto_addrs:
-        _assert_domains_allowed(auto_addrs, account_email=account_email)
     for addr in cc or []:
         recip = reply.Recipients.Add(addr)
         recip.Type = 2
     for addr in bcc or []:
         recip = reply.Recipients.Add(addr)
         recip.Type = 3
-    if cc or bcc:
-        reply.Recipients.ResolveAll()
+    _resolve_and_validate_recipients(reply, account_email)
     _inject_reply_html(reply, body, html_body)
     reply.Save()
     if not reply.EntryID:
@@ -139,17 +153,13 @@ def reply_draft(entry_id: str, body: str, html_body: str | None = None, cc: list
     _assert_allowed(parent_name, account_email)
     _assert_allowed("Drafts", account_email)
     reply = msg.Reply()
-    auto_addrs = _resolved_reply_addresses(reply)
-    if auto_addrs:
-        _assert_domains_allowed(auto_addrs, account_email=account_email)
     for addr in cc or []:
         recip = reply.Recipients.Add(addr)
         recip.Type = 2
     for addr in bcc or []:
         recip = reply.Recipients.Add(addr)
         recip.Type = 3
-    if cc or bcc:
-        reply.Recipients.ResolveAll()
+    _resolve_and_validate_recipients(reply, account_email)
     _inject_reply_html(reply, body, html_body)
     reply.Save()
     if not reply.EntryID:
@@ -205,7 +215,7 @@ def forward_mail(entry_id: str, to: list[str], body: str, html_body: str | None 
     for addr in cc or []:
         recip = fwd.Recipients.Add(addr)
         recip.Type = 2
-    fwd.Recipients.ResolveAll()
+    _resolve_and_validate_recipients(fwd, account_email)
     _inject_reply_html(fwd, body, html_body)
     for path in validated_paths:
         fwd.Attachments.Add(str(path))
