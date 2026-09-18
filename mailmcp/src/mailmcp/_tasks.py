@@ -58,7 +58,7 @@ def list_tasks(include_completed: bool = False, due_before: str | None = None, t
             due_iso = str(due_val)[:10] if due_val and str(due_val) != "4501-01-01 00:00:00" else None
             body_text = str(getattr(task, "Body", "") or "")
             preview_chars = min(200, cfg.max_body_chars)
-            result.append({"entry_id": task.EntryID, "subject": _redact(str(task.Subject or ""), account_email), "status": status_int, "status_label": _OL_TASK_STATUS.get(status_int, "Unknown"), "priority": _OL_PRIORITY_REVERSE_MAP.get(importance, "normal"), "due_date": due_iso, "complete": bool(getattr(task, "Complete", False)), "categories": str(getattr(task, "Categories", "") or ""), "body_preview": _redact(body_text[:preview_chars], account_email)})
+            result.append({"entry_id": task.EntryID, "subject": _redact(str(task.Subject or ""), account_email), "status": status_int, "status_label": _OL_TASK_STATUS.get(status_int, "Unknown"), "priority": _OL_PRIORITY_REVERSE_MAP.get(importance, "normal"), "due_date": due_iso, "complete": bool(getattr(task, "Complete", False)), "categories": _redact(str(getattr(task, "Categories", "") or ""), account_email), "body_preview": _redact(body_text[:preview_chars], account_email)})
         except Exception as exc:
             logger.warning("list_tasks: skipping item (%s)", exc)
     return {"tasks": result, "count": len(result)}
@@ -166,7 +166,7 @@ def list_meeting_requests(top: int = 20, folder_name: str | None = None, folder_
         if len(result) >= top:
             break
         try:
-            result.append({"entry_id": item.EntryID, "subject": _redact(str(getattr(item, "Subject", "") or ""), account_email=account_email), "sender_name": _redact(str(getattr(item, "SenderName", "") or ""), account_email=account_email), "sender_email": _redact(_resolve_sender_email(item), account_email=account_email), "received_time": str(getattr(item, "ReceivedTime", "") or ""), "start": str(getattr(item, "Start", None)) if getattr(item, "Start", None) else None, "end": str(getattr(item, "End", None)) if getattr(item, "End", None) else None, "location": _redact(str(getattr(item, "Location", "") or ""), account_email=account_email), "response_requested": bool(getattr(item, "ResponseRequested", False)), "categories": str(getattr(item, "Categories", "") or "")})
+            result.append({"entry_id": item.EntryID, "subject": _redact(str(getattr(item, "Subject", "") or ""), account_email=account_email), "sender_name": _redact(str(getattr(item, "SenderName", "") or ""), account_email=account_email), "sender_email": _redact(_resolve_sender_email(item), account_email=account_email), "received_time": str(getattr(item, "ReceivedTime", "") or ""), "start": str(getattr(item, "Start", None)) if getattr(item, "Start", None) else None, "end": str(getattr(item, "End", None)) if getattr(item, "End", None) else None, "location": _redact(str(getattr(item, "Location", "") or ""), account_email=account_email), "response_requested": bool(getattr(item, "ResponseRequested", False)), "categories": _redact(str(getattr(item, "Categories", "") or ""), account_email=account_email)})
         except Exception as exc:
             logger.warning("list_meeting_requests: skipping item (%s)", exc)
     return {"requests": result, "count": len(result)}
