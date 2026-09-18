@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+from itertools import islice
 
 from mailmcp import _core
 from mailmcp import _folders
@@ -228,14 +229,13 @@ def get_conversation_thread(
         return {"ok": True, "conversation_id": conversation_id, "count": 0, "messages": []}
     escaped_topic = _jet_escape(conv_topic)
     result_scan_count = 0
-    result_scan_capped = False
     for folder_name in folder_names:
+        remaining_scan_budget = _MAX_THREAD_SCAN_ITEMS - result_scan_count
+        if remaining_scan_budget <= 0:
+            break
         try:
             restricted = folder_resolver(folder_name).Items.Restrict(f"[ConversationTopic] = '{escaped_topic}'")
-            for msg in restricted:
-                if result_scan_count >= _MAX_THREAD_SCAN_ITEMS:
-                    result_scan_capped = True
-                    break
+            for msg in islice(restricted, remaining_scan_budget):
                 result_scan_count += 1
                 if getattr(msg, "ConversationID", None) != conversation_id:
                     continue
@@ -252,8 +252,6 @@ def get_conversation_thread(
                     })
                 except Exception as exc:
                     logger.debug("Skipping message in conversation thread: %s", exc)
-            if result_scan_capped:
-                break
         except Exception as exc:
             logger.debug("Skipping folder %s in conversation thread: %s", folder_name, exc)
     messages.sort(key=lambda row: row["received_time"] or "9999")
