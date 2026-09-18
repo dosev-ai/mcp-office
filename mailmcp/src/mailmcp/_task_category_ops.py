@@ -24,8 +24,8 @@ def outlook_respond_to_meeting(entry_id: str, response: str, confirm: bool = Fal
     return ol.respond_to_meeting(entry_id=entry_id, response=response, confirm=confirm, account_email=account_email)
 
 
-def outlook_list_categories() -> dict:
-    return ol.list_categories()
+def outlook_list_categories(account_email: str | None = None) -> dict:
+    return ol.list_categories(account_email=account_email)
 
 
 def outlook_set_message_category(entry_id: str, categories: list[str], confirm: bool = False, account_email: str | None = None) -> dict:
@@ -58,7 +58,7 @@ def outlook_task(operation: str, entry_id: str | None = None, subject: str | Non
 def outlook_category(operation: str, entry_id: str | None = None, categories: list[str] | None = None, category: str | None = None, folder_name: str | None = None, top: int = 20, confirm: bool = False, account_email: str | None = None) -> dict:
     op = operation.lower()
     if op == "list":
-        return outlook_list_categories()
+        return outlook_list_categories(account_email=account_email)
     if op == "set":
         if entry_id is None:
             raise ValueError("entry_id is required for operation='set'")
