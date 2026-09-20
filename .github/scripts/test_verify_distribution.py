@@ -176,6 +176,19 @@ class VerifyDistributionTests(unittest.TestCase):
         with td, self.assertRaisesRegex(SystemExit, "missing required suite packages"):
             verify_distribution.verify(project, dist)
 
+    def test_rejects_mailmcp_console_script_removed(self):
+        scripts = {
+            name: target for name, target in SCRIPTS.items() if name != "mailmcp"
+        }
+        td, project, dist = self.make_fixture(
+            project_text=_project_text(scripts=scripts)
+        )
+        with td, self.assertRaisesRegex(
+            SystemExit,
+            "required console script 'mailmcp' must map",
+        ):
+            verify_distribution.verify(project, dist)
+
     def test_rejects_missing_wheel_package(self):
         td, project, dist = self.make_fixture(
             wheel_omit="wordmcp/_com/__init__.py"
