@@ -129,7 +129,7 @@ def outlook_bulk_message_action(
     results: list[dict] = []
     succeeded = 0
     failed = 0
-    for eid in entry_ids:
+    for index, eid in enumerate(entry_ids):
         try:
             result = handle_message_action(
                 operation=operation_normalized, entry_id=eid, target_folder=target_folder,
@@ -138,9 +138,42 @@ def outlook_bulk_message_action(
             )
             results.append({"entry_id": eid, "ok": True, "result": result})
             succeeded += 1
-        except PermissionError:
-            raise
+        except PermissionError as exc:
+            results.append({
+                "entry_id": eid,
+                "ok": False,
+                "error": ol._redact(str(exc), account_email),
+                "permission_denied": True,
+            })
+            failed += 1
+            remaining = entry_ids[index + 1:]
+            results.extend(
+                {
+                    "entry_id": remaining_id,
+                    "ok": False,
+                    "skipped": True,
+                    "error": "Skipped after a permission failure aborted the batch.",
+                }
+                for remaining_id in remaining
+            )
+            return {
+                "total": len(entry_ids),
+                "succeeded": succeeded,
+                "failed": failed,
+                "skipped": len(remaining),
+                "partial": succeeded > 0,
+                "aborted": True,
+                "results": results,
+            }
         except Exception as exc:
             results.append({"entry_id": eid, "ok": False, "error": str(exc)})
             failed += 1
-    return {"total": len(entry_ids), "succeeded": succeeded, "failed": failed, "results": results}
+    return {
+        "total": len(entry_ids),
+        "succeeded": succeeded,
+        "failed": failed,
+        "skipped": 0,
+        "partial": succeeded > 0 and failed > 0,
+        "aborted": False,
+        "results": results,
+    }
