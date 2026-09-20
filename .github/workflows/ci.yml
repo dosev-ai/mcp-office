@@ -19,9 +19,9 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install ruff
-        run: pip install ruff
+        run: pip install ruff==0.15.4
       - name: Ruff check
-        run: ruff check excelmcp/src pptmcp/src wordmcp/src shared/ --ignore E501
+        run: ruff check excelmcp/src pptmcp/src wordmcp/src mailmcp/src shared/ --ignore E501
 
   test:
     name: Tests
@@ -64,6 +64,21 @@ jobs:
       - name: Run unit tests
         run: pytest wordmcp/tests/ -q --tb=short -m "not integration and not com"
 
+  test-mailmcp:
+    name: Tests (mailmcp)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install MailMCP test dependencies
+        run: pip install "fastmcp>=3.2.0,<4" "pytest>=8.0"
+      - name: Run public MailMCP unit tests
+        env:
+          PYTHONPATH: mailmcp/src
+        run: pytest mailmcp/tests/ -q --tb=short
+
   startup-smoke:
     name: Startup smoke
     runs-on: ubuntu-latest
@@ -84,5 +99,10 @@ jobs:
           assert "tools" in result, "capabilities() missing 'tools' key"
           assert "capabilities_v2" in result, "capabilities() missing 'capabilities_v2' key"
           assert len(result["tools"]) >= 60, "Expected >= 60 tools, got " + str(len(result["tools"]))
-          print("Startup smoke PASS - " + str(len(result["tools"])) + " tools, capabilities_v2 present")
+          print("Excel startup smoke PASS - " + str(len(result["tools"])) + " tools, capabilities_v2 present")
+          PYEOF
+          PYTHONPATH="$GITHUB_WORKSPACE/mailmcp/src" python - << 'PYEOF'
+          from mailmcp.server import mcp
+          assert mcp is not None
+          print("MailMCP import/startup wiring smoke PASS")
           PYEOF
