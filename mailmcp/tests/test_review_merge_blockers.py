@@ -13,6 +13,7 @@ from mailmcp import (
     _folders,
     _mail_ops,
     _message_fetch,
+    _message_save,
     _messages,
     _tasks,
 )
@@ -135,7 +136,7 @@ def test_attachment_filename_and_saved_path_follow_redaction(
         (tmp_path.resolve(),),
     )
 
-    result = _message_fetch.save_attachments(
+    result = _message_save.save_attachments(
         "synthetic-item",
         str(tmp_path),
     )
