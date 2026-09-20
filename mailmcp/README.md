@@ -1,6 +1,6 @@
 # MailMCP — Outlook MCP Server
 
-> **Status: Coming next.** The public Outlook-only source has been migrated to this repository, but MailMCP is **not yet included in the published `mcp-office` package**. Use the source-preview setup below for evaluation. Public availability will be claimed only after single-distribution integration, Windows Outlook UAT, and published-artifact verification pass.
+> **Status: Coming next.** MailMCP is integrated into this repository's single `mcp-office` source distribution, but it is **not yet claimed as available in the published PyPI artifact**. Public availability will be claimed only after Windows Outlook UAT and published-artifact verification pass.
 
 MailMCP is the local Outlook automation server in the MCP Office suite. It exposes Outlook email, folders, calendar, contacts, tasks, categories, meeting requests, and related operations over local MCP stdio.
 
@@ -27,9 +27,9 @@ The public server exposes Outlook operations across these areas:
 
 The source preview intentionally does not provide private search/retrieval systems or a public registry launcher.
 
-## Source-preview installation
+## Source-integrated installation
 
-Until MAIL-4 distribution integration is complete, **do not assume `pip install mcp-office` installs MailMCP**. For preview testing, run it from this repository:
+The repository build now contains MailMCP as the `mailmcp` console entry point. Until the next published artifact is verified, validate it from source:
 
 ```bat
 git clone https://github.com/dosev-ai/mcp-office.git
@@ -37,10 +37,24 @@ cd mcp-office
 python -m venv .venv
 .venv\Scripts\activate
 python -m pip install --upgrade pip
-python -m pip install "fastmcp>=3.2.0,<4" "pywin32>=306"
+python -m pip install -e ".[com]"
 ```
 
-The examples below point Python at `mailmcp\src` through `PYTHONPATH`.
+This installs the consolidated suite plus the Windows COM extra used by Outlook automation.
+
+### Upgrade or uninstall the source build
+
+After pulling a newer source revision, refresh the editable install with:
+
+```bat
+python -m pip install -e ".[com]"
+```
+
+To remove the consolidated package:
+
+```bat
+python -m pip uninstall mcp-office
+```
 
 ## Safe default configuration
 
@@ -76,7 +90,6 @@ Open `%APPDATA%\Claude\claude_desktop_config.json` and add:
       "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
       "args": ["-m", "mailmcp.server"],
       "env": {
-        "PYTHONPATH": "C:\\path\\to\\mcp-office\\mailmcp\\src",
         "OUTLOOK_ALLOWLIST_FOLDERS": "Inbox,Contacts",
         "OUTLOOK_REDACT_MODE": "emails"
       }
@@ -111,7 +124,6 @@ Alternatively, add the same project-scoped stdio server with the Claude Code CLI
 
 ```bat
 claude mcp add --scope project ^
-  --env PYTHONPATH=C:\path\to\mcp-office\mailmcp\src ^
   --env OUTLOOK_ALLOWLIST_FOLDERS=Inbox,Contacts ^
   --env OUTLOOK_REDACT_MODE=emails ^
   --transport stdio mail-mailmcp -- ^
@@ -160,7 +172,6 @@ A healthy server should connect to classic Outlook and return only the policy-bo
 You can also start the stdio server directly:
 
 ```bat
-set PYTHONPATH=%CD%\mailmcp\src
 .venv\Scripts\python.exe -m mailmcp.server
 ```
 
@@ -202,11 +213,11 @@ Confirm you are on Windows, classic Outlook desktop is installed, and the profil
 
 **`ModuleNotFoundError: mailmcp`**
 
-The preview is not yet part of the installed root wheel. Confirm `PYTHONPATH` points to `C:\path\to\mcp-office\mailmcp\src`, or run the direct command from the repository root as shown above.
+Refresh the consolidated source install with `python -m pip install -e ".[com]"` from the repository root, then confirm the MCP client uses that virtual environment.
 
 **`No module named pythoncom` / `win32com`**
 
-Install `pywin32>=306` in the same virtual environment used by the MCP client.
+Install the consolidated COM extra with `python -m pip install -e ".[com]"` from the repository root, or otherwise ensure `pywin32>=306` is installed in the same virtual environment used by the MCP client.
 
 **A folder is denied**
 
@@ -228,9 +239,8 @@ MailMCP requires a uniquely attributable DeliveryStore for explicit account scop
 
 The remaining public-release sequence is intentionally short:
 
-1. integrate MailMCP into the single `mcp-office` distribution and release verifier;
-2. run synthetic Windows + classic Outlook UAT from a fresh installation;
-3. publish and verify the artifact;
-4. only then change public listings from **Coming next** to **Available**.
+1. run synthetic Windows + classic Outlook UAT from a fresh consolidated installation;
+2. publish and verify the artifact;
+3. only then change public listings from **Coming next** to **Available**.
 
-Until those gates pass, this README documents a source preview, not a released MailMCP package.
+Until those gates pass, this README documents the source-integrated MailMCP server, not a released MailMCP availability claim.
