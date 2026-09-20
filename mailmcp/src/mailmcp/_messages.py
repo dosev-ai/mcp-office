@@ -9,10 +9,10 @@ import os
 import time
 
 from mailmcp import _folders
-from mailmcp._core import get_effective_config, _assert_allowed
+from mailmcp._core import get_effective_config, _assert_allowed, _redact
 from mailmcp._formatters import _msg_header, _parse_date, _format_outlook_date, _resolve_sender_email
 
-from mailmcp._message_fetch import health, list_accounts, list_folders, get_message  # noqa: F401
+from mailmcp._message_fetch import health, list_accounts, list_folders, get_message, _list_folders_raw  # noqa: F401
 from mailmcp._message_save import save_attachments  # noqa: F401
 from mailmcp._message_recipients import search_recipients  # noqa: F401
 
@@ -80,7 +80,7 @@ def _all_folder_search_names(account_email: str | None) -> list[str]:
     cfg = get_effective_config(account_email)
     if "*" not in cfg.allowlist_folders:
         return list(cfg.allowlist_folders)
-    discovered = list_folders(depth=2, account_email=account_email)
+    discovered = _list_folders_raw(depth=2, account_email=account_email)
     names: list[str] = []
     seen: set[str] = set()
     for row in discovered:
@@ -240,9 +240,27 @@ def search_all_folders_detailed(subject: str | None = None, sender: str | None =
     if folder_errors and len(folder_errors) == len(folder_names):
         detail = "; ".join(f"{item['folder_name']}: {item['error']}" for item in folder_errors)
         raise RuntimeError(f"search_all_folders failed for all folders: {detail}")
+    merged_messages = _merge_search_all_folders_results(
+        folder_results, folder_names, limit
+    )
+    public_messages: list[dict] = []
+    for message in merged_messages:
+        row = dict(message)
+        if "folder_name" in row:
+            row["folder_name"] = _redact(
+                str(row.get("folder_name") or ""), account_email
+            )
+        public_messages.append(row)
+    public_errors = [
+        {
+            "folder_name": _redact(str(item["folder_name"]), account_email),
+            "error": _redact(str(item["error"]), account_email),
+        }
+        for item in folder_errors
+    ]
     return {
-        "messages": _merge_search_all_folders_results(folder_results, folder_names, limit),
-        "errors": folder_errors,
+        "messages": public_messages,
+        "errors": public_errors,
         "partial_results": partial,
         "any_folder_capped": any_folder_capped,
         "folders_searched": folders_searched,
