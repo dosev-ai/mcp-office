@@ -278,10 +278,9 @@ def extract_tasks_from_message(entry_id: str, auto_create: bool = False, confirm
     cfg = get_effective_config(account_email)
     body = str(getattr(item, 'Body', '') or '')[:cfg.max_body_chars]
     subject = str(getattr(item, 'Subject', '') or '')
-    candidates = _extract_task_candidates(body)
+    candidates = _extract_task_candidates(body)[:cfg.max_items]
     created = []
     if auto_create and candidates:
-        candidates = candidates[:cfg.max_items]
         for candidate in candidates:
             created.append(create_task(subject=candidate['title'], due_date=candidate['due_date'], priority=candidate['priority'], confirm=True, account_email=account_email))
     visible_candidates = [{**row, 'title': _redact(row['title'], account_email)} for row in candidates]
