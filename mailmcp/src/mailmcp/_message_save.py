@@ -69,8 +69,10 @@ def save_attachments(
         if not raw_basename or raw_basename == ".." or "\x00" in raw_basename:
             raise ValueError(f"Attachment filename is unsafe: {raw_name!r}")
         suffix = Path(raw_basename).suffix
-        stem = Path(raw_basename).stem
-        name = f"{_core._redact(stem, effective_account)}{suffix}"
+        redacted_basename = _core._redact(raw_basename, effective_account)
+        name = redacted_basename
+        if suffix and not redacted_basename.lower().endswith(suffix.lower()):
+            name = f"{redacted_basename}{suffix}"
         if not name or name == ".." or "\x00" in name:
             raise ValueError("Attachment filename is unsafe after privacy redaction.")
         if suffix.lower() in _folders._DANGEROUS_SAVE_EXTENSIONS:
