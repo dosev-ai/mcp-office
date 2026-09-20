@@ -301,10 +301,14 @@ def get_mailbox_stats(folder_path: str | None = None, account_email: str | None 
                 folder = _folders._folder_by_name(name)
             unread = getattr(folder, "UnReadItemCount", 0)
             total = folder.Items.Count
-            folder_stats.append({"folder": name, "unread": unread, "total": total})
+            visible_name = _core._redact(name, account_email)
+            folder_stats.append({"folder": visible_name, "unread": unread, "total": total})
             total_unread += unread
             total_items += total
         except Exception as exc:
             logger.warning("get_mailbox_stats: skipping folder %s: %s", name, exc)
-            errors.append({"folder": name, "error": str(exc)[:200]})
+            errors.append({
+                "folder": _core._redact(name, account_email),
+                "error": _core._redact(str(exc)[:200], account_email),
+            })
     return {"folders": folder_stats, "total_unread": total_unread, "total_items": total_items, "errors": errors}
