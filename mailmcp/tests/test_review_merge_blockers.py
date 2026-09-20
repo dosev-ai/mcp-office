@@ -108,8 +108,12 @@ def test_denied_folder_error_does_not_echo_mailbox_folder_name():
     assert "person@example.com" not in str(exc_info.value)
 
 
+@pytest.mark.parametrize(
+    "filename",
+    ["invoice-person@example.com.pdf", "person@example.pdf"],
+)
 def test_attachment_filename_and_saved_path_follow_redaction(
-    mailbox, monkeypatch, tmp_path
+    mailbox, monkeypatch, tmp_path, filename
 ):
     _core.set_config(
         replace(
@@ -124,7 +128,7 @@ def test_attachment_filename_and_saved_path_follow_redaction(
         Path(path).write_bytes(b"abc")
 
     attachment = SimpleNamespace(
-        FileName="invoice-person@example.com.pdf",
+        FileName=filename,
         Index=1,
         Size=3,
         SaveAsFile=save_as_file,
@@ -142,18 +146,26 @@ def test_attachment_filename_and_saved_path_follow_redaction(
     )
 
     assert result[0]["name"] == "[email].pdf"
-    assert "person@example.com" not in result[0]["path"]
+    assert "person@example" not in result[0]["path"]
     assert Path(result[0]["path"]).exists()
 
 
+@pytest.mark.parametrize(
+    ("redact_mode", "expected_fragment", "forbidden_fragment"),
+    [
+        ("none", "blocked.example", None),
+        ("emails", "domain policy", "blocked.example"),
+    ],
+)
 def test_calendar_update_validates_preserved_attendees(
-    mailbox, monkeypatch
+    mailbox, monkeypatch, redact_mode, expected_fragment, forbidden_fragment
 ):
     _core.set_config(
         replace(
             _core.get_config(),
             allowlist_folders=["Calendar"],
             allowlist_domains=["example.com"],
+            redact_mode=redact_mode,
         )
     )
     mailbox.item.Class = 26
@@ -196,13 +208,18 @@ def test_calendar_update_validates_preserved_attendees(
         lambda entry: entry.Address,
     )
 
-    with pytest.raises(PermissionError, match="blocked.example"):
+    with pytest.raises(PermissionError) as exc_info:
         _calendar.update_calendar_event(
             "synthetic-item",
             required_attendees=["new@example.com"],
             confirm=True,
         )
 
+    message = str(exc_info.value)
+    assert expected_fragment in message
+    if forbidden_fragment is not None:
+        assert forbidden_fragment not in message
+        assert "kept@blocked.example" not in message
     mailbox.item.Save.assert_not_called()
 
 
