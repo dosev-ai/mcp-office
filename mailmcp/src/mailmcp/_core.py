@@ -438,10 +438,12 @@ def _assert_allowed(folder_name: str, account_email: str | None = None) -> None:
     if folder_name.lower() not in allowed and "*" not in allowed:
         if account_email:
             raise PermissionError(
-                f"Folder '{folder_name}' is not accessible for account '{account_email}'. Check OUTLOOK_ACCOUNT_N_ALLOWLIST_FOLDERS for that account."
+                "Folder is not accessible for the selected account. "
+                "Check OUTLOOK_ACCOUNT_N_ALLOWLIST_FOLDERS for that account."
             )
         raise PermissionError(
-            f"Folder '{folder_name}' is not in the allowlist. Add it to OUTLOOK_ALLOWLIST_FOLDERS to enable access."
+            "Folder is not in the allowlist. "
+            "Add it to OUTLOOK_ALLOWLIST_FOLDERS to enable access."
         )
 
 
