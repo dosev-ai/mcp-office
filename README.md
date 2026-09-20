@@ -51,7 +51,7 @@ New packages are added as they complete their proof cycle. See [ROADMAP.md](ROAD
 - Windows 10 or 11
 - Python 3.11 or later (`python --version`)
 - [Claude Desktop](https://claude.ai/download) or VS Code with GitHub Copilot
-- Microsoft Office (Excel / PowerPoint / Word) — required for COM-backed tools (styling, PDF export, tracked-changes)
+- Microsoft Office (Excel / PowerPoint / Word) — required for COM-backed tools (styling, PDF export, tracked-changes)\n- Classic Microsoft Outlook desktop — required only for the MailMCP source preview
 
 ### Install
 
@@ -152,12 +152,12 @@ Your MCP client (Claude Desktop / VS Code Copilot / other)
    ├─ wordmcp     — Word automation (live)
    └─ mailmcp     — Outlook automation (coming)
         │
-        │  COM / openpyxl / python-pptx / python-docx
+        │  COM / Outlook COM / openpyxl / python-pptx / python-docx
         ↓
   Microsoft Office (local installation)
 ```
 
-Each server is a standalone `stdio` MCP server. No network calls. No cloud dependency. Your files stay local.
+Each server is a standalone local `stdio` MCP process. MCP Office does not add a hosted service; Microsoft Office and your MCP client/model may still have their own sync and data-handling boundaries.
 
 ---
 
