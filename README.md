@@ -36,7 +36,9 @@ MCP Office is a suite of [Model Context Protocol](https://modelcontextprotocol.i
 
 | Package | Status |
 |---|---|
-| `mailmcp` | In development — Outlook email, calendar, contacts, and MailRepo search |
+| [`mailmcp`](mailmcp/) | Public Outlook-only source migrated; single-distribution integration, Windows Outlook UAT, and release verification pending |
+
+MailMCP currently has a **source preview** for local Windows + classic Outlook testing. The published `mcp-office` artifact does **not** yet claim MailMCP availability. See [mailmcp/README.md](mailmcp/README.md) for the bounded preview setup.
 
 New packages are added as they complete their proof cycle. See [ROADMAP.md](ROADMAP.md).
 
@@ -50,6 +52,7 @@ New packages are added as they complete their proof cycle. See [ROADMAP.md](ROAD
 - Python 3.11 or later (`python --version`)
 - [Claude Desktop](https://claude.ai/download) or VS Code with GitHub Copilot
 - Microsoft Office (Excel / PowerPoint / Word) — required for COM-backed tools (styling, PDF export, tracked-changes)
+- Classic Microsoft Outlook desktop — required only for the MailMCP source preview
 
 ### Install
 
@@ -120,7 +123,7 @@ Call capabilities() on word-wordmcp
 
 Each should return a tool list (65 for Excel, 46 for PowerPoint, 50 for Word). If a server is missing, check that `python` resolves to the venv where you installed `mcp-office`.
 
-Full per-package guides: [excelmcp/README.md](excelmcp/README.md) · [pptmcp/README.md](pptmcp/README.md) · [wordmcp/README.md](wordmcp/README.md)
+Full per-package guides: [excelmcp/README.md](excelmcp/README.md) · [pptmcp/README.md](pptmcp/README.md) · [wordmcp/README.md](wordmcp/README.md) · [mailmcp/README.md](mailmcp/README.md) *(source preview)*
 
 Detailed step-by-step: [docs/quickstart.md](docs/quickstart.md)
 
@@ -148,14 +151,14 @@ Your MCP client (Claude Desktop / VS Code Copilot / other)
    ├─ excelmcp    — Excel automation (live)
    ├─ pptmcp      — PowerPoint automation (live)
    ├─ wordmcp     — Word automation (live)
-   └─ mailmcp     — Outlook + MailRepo (coming)
+   └─ mailmcp     — Outlook automation (coming)
         │
-        │  COM / openpyxl / python-pptx / python-docx
+        │  COM / Outlook COM / openpyxl / python-pptx / python-docx
         ↓
   Microsoft Office (local installation)
 ```
 
-Each server is a standalone `stdio` MCP server. No network calls. No cloud dependency. Your files stay local.
+Each server is a standalone local `stdio` MCP process. MCP Office does not add a hosted service; Microsoft Office and your MCP client/model may still have their own sync and data-handling boundaries.
 
 ---
 
