@@ -11,6 +11,7 @@ import mailmcp.outlook_com as outlook_com
 
 from mailmcp import (
     _calendar,
+    _categories,
     _core,
     _folders,
     _mail_ops,
@@ -375,3 +376,10 @@ def test_bulk_permission_failure_returns_explicit_partial_result(monkeypatch):
     assert result["results"][1]["permission_denied"] is True
     assert "person@example.com" not in result["results"][1]["error"]
     assert result["results"][2]["skipped"] is True
+
+
+@pytest.mark.parametrize("category", ["", "   ", "\t"])
+def test_category_search_rejects_blank_input_before_outlook(category):
+    with pytest.raises(ValueError, match="category"):
+        _categories.get_messages_by_category(category)
+    _core._get_outlook.assert_not_called()
