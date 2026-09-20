@@ -102,5 +102,6 @@ def outlook_create_folder(
     return ol.create_folder(
         parent_folder=parent_folder,
         name=name,
+        confirm=confirm,
         account_email=account_email,
     )
