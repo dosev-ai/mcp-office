@@ -45,7 +45,7 @@ class Recipients:
 
 @pytest.fixture(autouse=True)
 def isolated_outlook_policy(monkeypatch):
-    for key in os.environ:
+    for key in list(os.environ):
         if key.startswith("OUTLOOK_"):
             monkeypatch.delenv(key)
     config = _core.OutlookConfig()
