@@ -47,6 +47,41 @@ def _effective_account_for_item(item, account_email: str | None) -> str | None:
     return owners[0]
 
 
+def _verified_sending_account(
+    msg, source_account: str | None, mapi
+) -> str | None:
+    try:
+        send_account = getattr(msg, "SendUsingAccount", None)
+    except Exception as exc:
+        if source_account is not None or _core._account_overrides:
+            raise PermissionError(
+                "Cannot verify the Outlook account that will send this draft."
+            ) from exc
+        return None
+    if send_account is None:
+        if source_account is not None or _core._account_overrides:
+            raise PermissionError(
+                "Cannot verify the Outlook account that will send this draft."
+            )
+        return None
+    smtp = _folders._normalized_account_email(
+        getattr(send_account, "SmtpAddress", None)
+    )
+    if smtp is None:
+        if source_account is not None or _core._account_overrides:
+            raise PermissionError(
+                "Cannot verify the Outlook account that will send this draft."
+            )
+        return None
+    if source_account is not None and smtp != source_account:
+        raise PermissionError(
+            "Draft sending account does not match the selected Outlook account."
+        )
+    if _core._account_overrides:
+        _folders._find_store_for_account(smtp, mapi)
+    return smtp
+
+
 def _folder_in_item_store(item, folder_name: str):
     store = _folders._resolve_store_for_object(item)
     if store is None:
@@ -88,7 +123,13 @@ def send_mail(entry_id: str, confirm: bool = False, account_email: str | None = 
     except Exception as exc:
         raise ValueError(f"Message not found (entry_id={entry_id!r})") from exc
     _assert_draft_item(msg, account_email)
-    _resolve_and_validate_recipients(msg, account_email)
+    source_account = _effective_account_for_item(msg, account_email)
+    send_account = _verified_sending_account(msg, source_account, mapi)
+    if not get_effective_config(send_account).enable_send:
+        raise PermissionError(
+            "send_mail is disabled for the Outlook account selected to send this draft."
+        )
+    _resolve_and_validate_recipients(msg, send_account)
     msg.Send()
     return {"status": "sent", "entry_id": entry_id}
 
@@ -248,7 +289,7 @@ def get_conversation_thread(
                         "sender_email": _redact(_resolve_sender_email(msg), effective_account),
                         "received_time": _fmt_date(getattr(msg, "ReceivedTime", None)),
                         "body_preview": _redact(body[: cfg.max_body_chars], effective_account),
-                        "folder_name": folder_name,
+                        "folder_name": _redact(folder_name, effective_account),
                     })
                 except Exception as exc:
                     logger.debug("Skipping message in conversation thread: %s", exc)
