@@ -107,6 +107,19 @@ For a project-scoped Claude Code configuration, add the same local stdio server 
 }
 ```
 
+Alternatively, add the same project-scoped stdio server with the Claude Code CLI:
+
+```bat
+claude mcp add --scope project ^
+  --env PYTHONPATH=C:\path\to\mcp-office\mailmcp\src ^
+  --env OUTLOOK_ALLOWLIST_FOLDERS=Inbox,Contacts ^
+  --env OUTLOOK_REDACT_MODE=emails ^
+  --transport stdio mail-mailmcp -- ^
+  C:\path\to\mcp-office\.venv\Scripts\python.exe -m mailmcp.server
+```
+
+Check the stored server with `claude mcp get mail-mailmcp`. Project-scoped `.mcp.json` servers require the normal Claude Code approval/trust step on first use.
+
 Keep mutation flags unset for the first run. Add only the folders and capabilities required by the workflow you are testing.
 
 ## VS Code with GitHub Copilot
