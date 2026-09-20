@@ -436,13 +436,14 @@ def _assert_allowed(folder_name: str, account_email: str | None = None) -> None:
     cfg = get_effective_config(account_email)
     allowed = [f.lower() for f in cfg.allowlist_folders]
     if folder_name.lower() not in allowed and "*" not in allowed:
+        visible_folder = _redact(folder_name, account_email)
         if account_email:
             raise PermissionError(
-                "Folder is not accessible for the selected account. "
+                f"Folder '{visible_folder}' is not accessible for the selected account. "
                 "Check OUTLOOK_ACCOUNT_N_ALLOWLIST_FOLDERS for that account."
             )
         raise PermissionError(
-            "Folder is not in the allowlist. "
+            f"Folder '{visible_folder}' is not in the allowlist. "
             "Add it to OUTLOOK_ALLOWLIST_FOLDERS to enable access."
         )
 
