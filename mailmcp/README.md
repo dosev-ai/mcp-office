@@ -14,7 +14,7 @@ MailMCP is the local Outlook automation server in the MCP Office suite. It expos
 - Mutations require the relevant enable flag and an explicit `confirm=True` call where the operation is confirmation-gated.
 - Tests and release evidence must use synthetic or dedicated test-mailbox data only.
 
-## What the preview can do
+## What the source-integrated server can do
 
 The public server exposes Outlook operations across these areas:
 
@@ -25,7 +25,7 @@ The public server exposes Outlook operations across these areas:
 - **Contacts and folders:** contact listing/detail/search and controlled folder creation.
 - **Context:** bounded Outlook mail-context retrieval for agent workflows.
 
-The source preview intentionally does not provide private search/retrieval systems or a public registry launcher.
+The public source intentionally does not provide private search/retrieval systems or a public registry launcher.
 
 ## Source-integrated installation
 
@@ -111,7 +111,6 @@ For a project-scoped Claude Code configuration, add the same local stdio server 
       "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
       "args": ["-m", "mailmcp.server"],
       "env": {
-        "PYTHONPATH": "C:\\path\\to\\mcp-office\\mailmcp\\src",
         "OUTLOOK_ALLOWLIST_FOLDERS": "Inbox,Contacts",
         "OUTLOOK_REDACT_MODE": "emails"
       }
@@ -155,9 +154,9 @@ Create or edit `.vscode/mcp.json`:
 }
 ```
 
-VS Code also supports user-level MCP configuration; the workspace example above keeps the preview configuration explicit and easy to remove.
+VS Code also supports user-level MCP configuration; the workspace example above keeps the MailMCP configuration explicit and easy to remove.
 
-## Verify the preview
+## Verify the source-integrated server
 
 Start with read-only checks:
 
