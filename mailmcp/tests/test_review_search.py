@@ -91,3 +91,26 @@ def test_restrict_failure_does_not_return_unfiltered_messages(monkeypatch, mailb
     monkeypatch.setattr(_messages._folders, "_folder_by_name", lambda name: mailbox.folders[("a", "Inbox")])
     with pytest.raises(RuntimeError, match="filter"):
         _messages.list_messages(unread_only=True)
+
+
+def test_all_folder_search_redacts_folder_name_only_at_public_boundary(monkeypatch):
+    scheduler(monkeypatch, {
+        "person@example.com": [
+            {
+                "entry_id": "message-1",
+                "received_time": "2026-09-20",
+                "folder_name": "person@example.com",
+            }
+        ],
+    })
+    _core.set_config(
+        _core.OutlookConfig(
+            allowlist_folders=["person@example.com"],
+            redact_mode="emails",
+        )
+    )
+    monkeypatch.setattr(_messages, "as_completed", lambda futures, **kwargs: iter(futures))
+
+    result = _messages.search_all_folders_detailed(subject="synthetic", top=1)
+
+    assert result["messages"][0]["folder_name"] == "[email]"
