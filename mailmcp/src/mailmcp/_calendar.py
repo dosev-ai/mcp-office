@@ -196,7 +196,16 @@ def update_calendar_event(entry_id: str, subject: str | None = None, start_iso: 
             if address_entry is None:
                 raise PermissionError("Cannot verify a resolved calendar attendee.")
             resolved_addresses.append(_core._resolve_smtp_from_entry(address_entry))
-        _core._assert_domains_allowed(resolved_addresses, account_email=account_email)
+        try:
+            _core._assert_domains_allowed(
+                resolved_addresses, account_email=account_email
+            )
+        except PermissionError as exc:
+            if get_effective_config(account_email).redact_mode != "none":
+                raise PermissionError(
+                    "One or more calendar attendees are blocked by domain policy."
+                ) from exc
+            raise
     item.Save()
     result = _folders._appointment_to_dict(item, include_body=True, account_email=account_email)
     result["status"] = "updated"
