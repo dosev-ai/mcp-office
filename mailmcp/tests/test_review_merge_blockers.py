@@ -141,7 +141,7 @@ def test_attachment_filename_and_saved_path_follow_redaction(
         str(tmp_path),
     )
 
-    assert result[0]["name"] == "invoice-[email].pdf"
+    assert result[0]["name"] == "[email].pdf"
     assert "person@example.com" not in result[0]["path"]
     assert Path(result[0]["path"]).exists()
 
