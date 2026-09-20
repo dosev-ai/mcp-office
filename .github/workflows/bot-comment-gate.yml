@@ -66,6 +66,8 @@ jobs:
           # H-004 fix: require at least one COMMENTED review (not just APPROVED),
           #            because an APPROVED review may have zero inline comments.
           # H-005 fix: --paginate ensures all review pages are fetched.
+          # H-006 fix: jq -s 'add' normalizes paginated JSON arrays before Python parsing.
+          # Refreshed after the reproducible Ruff prerequisite landed on public main.
           if [ "${GITHUB_EVENT_NAME}" = "pull_request" ]; then
             # H-003: skip for draft PRs — Copilot never reviews drafts and GitHub
             # itself blocks auto-merge on them, so no merge-safety gap exists.
@@ -86,7 +88,7 @@ jobs:
             # H-002: capture API exit code separately for a clear failure diagnostic.
             set +e
             _TMP_REV=$(mktemp)
-            gh api "repos/${REPO}/pulls/${PR_NUMBER}/reviews" --paginate > "$_TMP_REV" 2>/tmp/bcbr_api_err
+            (gh api "repos/${REPO}/pulls/${PR_NUMBER}/reviews" --paginate | jq -s 'add') > "$_TMP_REV" 2>/tmp/bcbr_api_err
             API_EXIT=$?
             set -e
             if [ "$API_EXIT" -ne 0 ]; then
@@ -107,7 +109,7 @@ jobs:
               # permanently deadlock the gate.)
               set +e
               _TMP_CMTS=$(mktemp)
-              gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --paginate > "$_TMP_CMTS" 2>/dev/null
+              (gh api "repos/${REPO}/pulls/${PR_NUMBER}/comments" --paginate | jq -s 'add') > "$_TMP_CMTS" 2>/dev/null
               ALL_DISPOSED=$(python3 - "$_TMP_CMTS" <<'PYEOF'
           import json, re, sys
           bot_logins = {"github-copilot[bot]", "copilot-pull-request-reviewer", "copilot-pull-request-reviewer[bot]", "openai-codex[bot]", "Copilot", "chatgpt-codex-connector[bot]", "chatgpt-codex-connector"}
@@ -155,8 +157,7 @@ jobs:
 
             if ! ALL_COMMENTS=$(gh api \
               "repos/${REPO}/pulls/${PR_NUMBER}/comments" \
-              --paginate \
-              -q '.'); then
+              --paginate | jq -s 'add'); then
               echo "Failed to fetch PR comments from GitHub API." >&2
               if [ "$attempt" -lt "$MAX_RETRIES" ]; then
                 echo "Retrying in ${RETRY_WAIT}s..." >&2
