@@ -94,6 +94,9 @@ def get_messages_by_category(
     account_email: str | None = None,
 ) -> dict:
     """Retrieve messages tagged with a specific category from a folder."""
+    if not isinstance(category, str) or not category.strip():
+        raise ValueError("category must be a non-blank string.")
+    category = category.strip()
     cfg = get_effective_config(account_email)
     top = min(top, cfg.max_items)
 
