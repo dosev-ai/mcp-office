@@ -145,7 +145,6 @@ Create or edit `.vscode/mcp.json`:
       "command": "C:\\path\\to\\mcp-office\\.venv\\Scripts\\python.exe",
       "args": ["-m", "mailmcp.server"],
       "env": {
-        "PYTHONPATH": "C:\\path\\to\\mcp-office\\mailmcp\\src",
         "OUTLOOK_ALLOWLIST_FOLDERS": "Inbox,Contacts",
         "OUTLOOK_REDACT_MODE": "emails"
       }
