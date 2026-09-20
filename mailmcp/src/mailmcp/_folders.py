@@ -408,7 +408,16 @@ def _appointment_to_dict(apt: Any, include_body: bool = False, account_email: st
     return result
 
 
-def create_folder(parent_folder: str, name: str, account_email: str | None = None) -> dict:
+def create_folder(
+    parent_folder: str,
+    name: str,
+    confirm: bool = False,
+    account_email: str | None = None,
+) -> dict:
+    if not confirm:
+        raise ValueError(
+            "confirm=True is required to create a folder. This is a safety gate."
+        )
     _core._assert_write_enabled(account_email)
     _core._assert_allowed(parent_folder, account_email)
     name = name.strip()
