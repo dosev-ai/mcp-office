@@ -36,7 +36,9 @@ MCP Office is a suite of [Model Context Protocol](https://modelcontextprotocol.i
 
 | Package | Status |
 |---|---|
-| `mailmcp` | In development — Outlook email, calendar, contacts, and MailRepo search |
+| [`mailmcp`](mailmcp/) | Public Outlook-only source migrated; single-distribution integration, Windows Outlook UAT, and release verification pending |
+
+MailMCP currently has a **source preview** for local Windows + classic Outlook testing. The published `mcp-office` artifact does **not** yet claim MailMCP availability. See [mailmcp/README.md](mailmcp/README.md) for the bounded preview setup.
 
 New packages are added as they complete their proof cycle. See [ROADMAP.md](ROADMAP.md).
 
@@ -120,7 +122,7 @@ Call capabilities() on word-wordmcp
 
 Each should return a tool list (65 for Excel, 46 for PowerPoint, 50 for Word). If a server is missing, check that `python` resolves to the venv where you installed `mcp-office`.
 
-Full per-package guides: [excelmcp/README.md](excelmcp/README.md) · [pptmcp/README.md](pptmcp/README.md) · [wordmcp/README.md](wordmcp/README.md)
+Full per-package guides: [excelmcp/README.md](excelmcp/README.md) · [pptmcp/README.md](pptmcp/README.md) · [wordmcp/README.md](wordmcp/README.md) · [mailmcp/README.md](mailmcp/README.md) *(source preview)*
 
 Detailed step-by-step: [docs/quickstart.md](docs/quickstart.md)
 
@@ -148,7 +150,7 @@ Your MCP client (Claude Desktop / VS Code Copilot / other)
    ├─ excelmcp    — Excel automation (live)
    ├─ pptmcp      — PowerPoint automation (live)
    ├─ wordmcp     — Word automation (live)
-   └─ mailmcp     — Outlook + MailRepo (coming)
+   └─ mailmcp     — Outlook automation (coming)
         │
         │  COM / openpyxl / python-pptx / python-docx
         ↓
