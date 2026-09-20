@@ -54,7 +54,10 @@ def list_accounts() -> list[dict]:
             "display_name": _redact(display_name, smtp_addr if smtp_addr else None),
             "exchange_store_type": getattr(store, "ExchangeStoreType", None),
             "config_profile": {
-                "allowlist_folders": effective_cfg.allowlist_folders,
+                "allowlist_folders": [
+                    _redact(folder_name, smtp_addr if smtp_addr else None)
+                    for folder_name in effective_cfg.allowlist_folders
+                ],
                 "enable_write": effective_cfg.enable_write,
                 "enable_send": effective_cfg.enable_send,
                 "enable_delete": effective_cfg.enable_delete,
@@ -65,10 +68,12 @@ def list_accounts() -> list[dict]:
     return result
 
 
-def list_folders(
+def _list_folders_scoped(
     store_name: str | None = None,
     depth: int = 1,
     account_email: str | None = None,
+    *,
+    redact_names: bool,
 ) -> list[dict]:
     if account_email is None and _core._account_overrides:
         raise PermissionError(
@@ -108,7 +113,7 @@ def list_folders(
                 child_name = str(getattr(child, "Name", "") or "").strip()
                 if child_name and ("*" in allowed or child_name.lower() in allowed):
                     result.append({
-                        "name": _redact(child_name, account_email),
+                        "name": _redact(child_name, account_email) if redact_names else child_name,
                         "unread_count": getattr(child, "UnReadItemCount", 0),
                         "item_count": getattr(child, "Items", None) and child.Items.Count or 0,
                     })
@@ -122,6 +127,33 @@ def list_folders(
         raise PermissionError("Cannot open the selected Outlook account root folder.") from exc
     _walk(root, min(depth, 4))
     return result
+
+
+def list_folders(
+    store_name: str | None = None,
+    depth: int = 1,
+    account_email: str | None = None,
+) -> list[dict]:
+    return _list_folders_scoped(
+        store_name=store_name,
+        depth=depth,
+        account_email=account_email,
+        redact_names=True,
+    )
+
+
+def _list_folders_raw(
+    store_name: str | None = None,
+    depth: int = 1,
+    account_email: str | None = None,
+) -> list[dict]:
+    """Internal-only folder discovery retaining raw names for COM resolution."""
+    return _list_folders_scoped(
+        store_name=store_name,
+        depth=depth,
+        account_email=account_email,
+        redact_names=False,
+    )
 
 
 def get_message(entry_id: str, include_body: bool = False, account_email: str | None = None) -> dict:
