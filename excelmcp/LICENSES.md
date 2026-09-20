@@ -111,12 +111,12 @@ Lock file was compiled from `pyproject.toml` using `pip-compile --strip-extras` 
 
 Not pinned in the lock file (compiled without `[dev]` extras). These packages are used only in the development environment and are not shipped in production.
 
-| Package | Min version constraint | License | Classification |
+| Package | Version constraint | License | Classification |
 |---|---|---|---|
 | pytest | >=8.0 | MIT | Permissive |
 | pytest-mock | >=3.12 | MIT | Permissive |
 | pytest-socket | >=0.7 | MIT | Permissive |
-| ruff | >=0.4 | MIT | Permissive |
+| ruff | ==0.15.4 | MIT | Permissive |
 
 ---
 
