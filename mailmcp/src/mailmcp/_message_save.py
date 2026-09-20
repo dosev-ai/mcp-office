@@ -65,13 +65,18 @@ def save_attachments(
     for att in msg.Attachments:
         size = getattr(att, "Size", 0)
         raw_name = att.FileName or f"attachment_{att.Index}"
-        name = Path(raw_name).name
-        if not name or name == ".." or "\x00" in name:
+        raw_basename = Path(raw_name).name
+        if not raw_basename or raw_basename == ".." or "\x00" in raw_basename:
             raise ValueError(f"Attachment filename is unsafe: {raw_name!r}")
-        if Path(name).suffix.lower() in _folders._DANGEROUS_SAVE_EXTENSIONS:
+        suffix = Path(raw_basename).suffix
+        stem = Path(raw_basename).stem
+        name = f"{_core._redact(stem, effective_account)}{suffix}"
+        if not name or name == ".." or "\x00" in name:
+            raise ValueError("Attachment filename is unsafe after privacy redaction.")
+        if suffix.lower() in _folders._DANGEROUS_SAVE_EXTENSIONS:
             saved.append({"name": name, "skipped": True, "reason": "file extension blocked by policy"})
             continue
-        if Path(name).suffix.lower() not in _folders._ALLOWED_SAVE_EXTENSIONS:
+        if suffix.lower() not in _folders._ALLOWED_SAVE_EXTENSIONS:
             saved.append({"name": name, "skipped": True, "reason": "file extension not in allowlist"})
             continue
         if size > max_bytes:
