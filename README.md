@@ -51,7 +51,8 @@ New packages are added as they complete their proof cycle. See [ROADMAP.md](ROAD
 - Windows 10 or 11
 - Python 3.11 or later (`python --version`)
 - [Claude Desktop](https://claude.ai/download) or VS Code with GitHub Copilot
-- Microsoft Office (Excel / PowerPoint / Word) — required for COM-backed tools (styling, PDF export, tracked-changes)\n- Classic Microsoft Outlook desktop — required only for the MailMCP source preview
+- Microsoft Office (Excel / PowerPoint / Word) — required for COM-backed tools (styling, PDF export, tracked-changes)
+- Classic Microsoft Outlook desktop — required only for the MailMCP source preview
 
 ### Install
 
