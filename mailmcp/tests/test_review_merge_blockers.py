@@ -6,12 +6,15 @@ from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
+import mailmcp
+import mailmcp.outlook_com as outlook_com
 
 from mailmcp import (
     _calendar,
     _core,
     _folders,
     _mail_ops,
+    _message_actions,
     _message_fetch,
     _message_save,
     _messages,
@@ -290,3 +293,85 @@ def test_account_listing_redacts_configured_folder_names(mailbox):
         "Inbox",
         "[email]",
     ]
+
+
+def test_runtime_set_config_is_not_public():
+    assert not hasattr(mailmcp, "set_config")
+    assert not hasattr(outlook_com, "set_config")
+    assert callable(_core.set_config)
+
+
+def test_mailbox_stats_redacts_configured_folder_name(monkeypatch):
+    _core.set_config(
+        _core.OutlookConfig(
+            allowlist_folders=["person@example.com"],
+            redact_mode="emails",
+        )
+    )
+    monkeypatch.setattr(_core, "_account_overrides", {})
+    folder = SimpleNamespace(
+        UnReadItemCount=1,
+        Items=SimpleNamespace(Count=2),
+    )
+    monkeypatch.setattr(_folders, "_folder_by_name", lambda _name: folder)
+
+    result = _calendar.get_mailbox_stats(folder_path="person@example.com")
+
+    assert result["folders"] == [{"folder": "[email]", "unread": 1, "total": 2}]
+
+
+def test_public_create_folder_requires_backend_confirmation(monkeypatch):
+    _core.set_config(
+        _core.OutlookConfig(
+            allowlist_folders=["Inbox"],
+            enable_write=True,
+        )
+    )
+    monkeypatch.setattr(_core, "_account_overrides", {})
+    resolver = Mock()
+    monkeypatch.setattr(_folders, "_folder_by_name_for_account", resolver)
+
+    with pytest.raises(ValueError, match="confirm=True"):
+        outlook_com.create_folder("Inbox", "Synthetic")
+
+    resolver.assert_not_called()
+
+
+def test_bulk_permission_failure_returns_explicit_partial_result(monkeypatch):
+    _core.set_config(
+        _core.OutlookConfig(
+            allowlist_folders=["Inbox"],
+            redact_mode="emails",
+            enable_write=True,
+        )
+    )
+    monkeypatch.setattr(_core, "_account_overrides", {})
+    calls: list[str] = []
+
+    def fake_handle_message_action(*, entry_id: str, **_kwargs):
+        calls.append(entry_id)
+        if entry_id == "blocked":
+            raise PermissionError("person@example.com is denied")
+        return {"ok": True, "entry_id": entry_id}
+
+    monkeypatch.setattr(
+        _message_actions,
+        "handle_message_action",
+        fake_handle_message_action,
+    )
+
+    result = _message_actions.outlook_bulk_message_action(
+        ["first", "blocked", "never-called"],
+        operation="mark_read",
+        confirm=True,
+    )
+
+    assert calls == ["first", "blocked"]
+    assert result["succeeded"] == 1
+    assert result["failed"] == 1
+    assert result["skipped"] == 1
+    assert result["partial"] is True
+    assert result["aborted"] is True
+    assert result["results"][1]["permission_denied"] is True
+    assert "person@example.com" not in result["results"][1]["error"]
+    assert result["results"][2]["skipped"] is True
