@@ -192,8 +192,6 @@ def update_calendar_event(entry_id: str, subject: str | None = None, start_iso: 
         resolved_addresses: list[str] = []
         for index in range(1, item.Recipients.Count + 1):
             recipient = item.Recipients.Item(index)
-            if getattr(recipient, "Type", None) not in recipient_types_to_replace:
-                continue
             address_entry = getattr(recipient, "AddressEntry", None)
             if address_entry is None:
                 raise PermissionError("Cannot verify a resolved calendar attendee.")
