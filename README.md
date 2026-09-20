@@ -36,9 +36,9 @@ MCP Office is a suite of [Model Context Protocol](https://modelcontextprotocol.i
 
 | Package | Status |
 |---|---|
-| [`mailmcp`](mailmcp/) | Public Outlook-only source migrated; single-distribution integration, Windows Outlook UAT, and release verification pending |
+| [`mailmcp`](mailmcp/) | Integrated into the current source distribution; Windows Outlook UAT and published-artifact verification pending |
 
-MailMCP currently has a **source preview** for local Windows + classic Outlook testing. The published `mcp-office` artifact does **not** yet claim MailMCP availability. See [mailmcp/README.md](mailmcp/README.md) for the bounded preview setup.
+MailMCP is now included in the repository's single `mcp-office` source distribution, but the currently published PyPI artifact does **not** yet claim MailMCP availability. See [mailmcp/README.md](mailmcp/README.md) for source validation while Windows Outlook UAT and release verification remain open.
 
 New packages are added as they complete their proof cycle. See [ROADMAP.md](ROADMAP.md).
 
@@ -52,7 +52,7 @@ New packages are added as they complete their proof cycle. See [ROADMAP.md](ROAD
 - Python 3.11 or later (`python --version`)
 - [Claude Desktop](https://claude.ai/download) or VS Code with GitHub Copilot
 - Microsoft Office (Excel / PowerPoint / Word) — required for COM-backed tools (styling, PDF export, tracked-changes)
-- Classic Microsoft Outlook desktop — required only for the MailMCP source preview
+- Classic Microsoft Outlook desktop — required for MailMCP
 
 ### Install
 
@@ -62,16 +62,14 @@ New packages are added as they complete their proof cycle. See [ROADMAP.md](ROAD
 pip install mcp-office
 ```
 
-Or clone and install from source (for development / COM extras):
+Or clone and install the consolidated suite from source (including MailMCP and Windows COM support):
 
 ```bash
 git clone https://github.com/dosev-ai/mcp-office.git
 cd mcp-office
 python -m venv .venv
 .venv\Scripts\activate
-pip install -e ./excelmcp
-pip install -e ./wordmcp
-pip install -e ./shared && pip install -e ./pptmcp
+python -m pip install -e ".[com]"
 ```
 
 ### Configure Claude Desktop
@@ -123,7 +121,7 @@ Call capabilities() on word-wordmcp
 
 Each should return a tool list (65 for Excel, 46 for PowerPoint, 50 for Word). If a server is missing, check that `python` resolves to the venv where you installed `mcp-office`.
 
-Full per-package guides: [excelmcp/README.md](excelmcp/README.md) · [pptmcp/README.md](pptmcp/README.md) · [wordmcp/README.md](wordmcp/README.md) · [mailmcp/README.md](mailmcp/README.md) *(source preview)*
+Full per-package guides: [excelmcp/README.md](excelmcp/README.md) · [pptmcp/README.md](pptmcp/README.md) · [wordmcp/README.md](wordmcp/README.md) · [mailmcp/README.md](mailmcp/README.md) *(source-integrated; release pending)*
 
 Detailed step-by-step: [docs/quickstart.md](docs/quickstart.md)
 
@@ -136,6 +134,7 @@ Detailed step-by-step: [docs/quickstart.md](docs/quickstart.md)
 | Windows 10 or 11 | COM automation requires Windows |
 | Python 3.11+ | `python --version` to confirm |
 | Microsoft Office | Required for COM-dependent tools (styling, PDF export, tracked-changes). Read-only docx/xlsx/pptx tools work without Office. |
+| Classic Outlook desktop | Required for MailMCP. MailMCP remains release-pending until Windows Outlook UAT and published-artifact verification pass. |
 | MCP client | [Claude Desktop](https://claude.ai/download) **or** [VS Code with Copilot](https://marketplace.visualstudio.com/items?itemName=GitHub.copilot) |
 
 ---
@@ -151,7 +150,7 @@ Your MCP client (Claude Desktop / VS Code Copilot / other)
    ├─ excelmcp    — Excel automation (live)
    ├─ pptmcp      — PowerPoint automation (live)
    ├─ wordmcp     — Word automation (live)
-   └─ mailmcp     — Outlook automation (coming)
+   └─ mailmcp     — Outlook automation (source-integrated; release pending)
         │
         │  COM / Outlook COM / openpyxl / python-pptx / python-docx
         ↓
