@@ -128,7 +128,7 @@ Report the result of each step.
 **This is not:**
 - An in-Excel Copilot replacement. excelmcp doesn’t operate inside the Excel UI.
 - An autonomous agent. Nothing runs without explicit tool calls.
-- A broad-suite Office automation layer yet — Excel is the lead package. Others are coming.
+- A hosted or in-app Office suite. Excel, PowerPoint, and Word are available as local MCP servers; Mail / Outlook remains the next package pending its release gates.
 
 ---
 
