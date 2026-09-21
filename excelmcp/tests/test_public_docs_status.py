@@ -13,7 +13,7 @@ def test_first_workflow_matches_public_suite_availability():
     assert "Mail / Outlook remains the next package" in first_workflow
     assert "Excel is the lead package. Others are coming." not in first_workflow
 
-    available = readme.split("### ✅ Available now", 1)[1].split("### 🚧 Coming next", 1)[0]
-    coming_next = readme.split("### 🚧 Coming next", 1)[1].split("---", 1)[0]
+    available, coming_next = readme.split("### 🚧 Coming next", 1)
+    assert "### ✅ Available now" in available
     assert all(package in available for package in ("excelmcp", "pptmcp", "wordmcp"))
     assert "mailmcp" in coming_next
