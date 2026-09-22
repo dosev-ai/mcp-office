@@ -320,7 +320,7 @@ In Claude Desktop or VS Code Copilot, ask:
 Call capabilities() on word-wordmcp
 ```
 
-You should see the Word capability inventory. The canonical public callable surface is 50 endpoints.
+You should see 50 tools. This is the current Word capability inventory.
 
 ### Environment variables
 
