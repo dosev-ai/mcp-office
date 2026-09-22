@@ -2,7 +2,7 @@
 name = "mcp-office-word"
 version = "0.4.0"
 requires-python = ">=3.11"
-description = "Word MCP server — 51 tools for document assembly, tracked changes, and structural QA. Part of the mcp-office workflow suite."
+description = "Word MCP server — 50 canonical callable endpoints for document assembly, tracked changes, and structural QA. Part of the mcp-office workflow suite."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Delyan Dosev", email = "ddossev@gmail.com" }]
