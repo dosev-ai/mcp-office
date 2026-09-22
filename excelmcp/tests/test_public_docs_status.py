@@ -38,25 +38,23 @@ def test_current_public_tool_counts_and_roadmap_are_synchronized():
     word_pyproject = WORD_PYPROJECT.read_text(encoding="utf-8")
 
     assert "| [`excelmcp`](excelmcp/) | Read, write, style, validate, and export Excel workbooks | `pip install mcp-office` | 65 |" in readme
-    assert "| [`pptmcp`](pptmcp/) | Build, edit, review, and export PowerPoint presentations." in readme
-    assert "| [`wordmcp`](wordmcp/) | Template assembly, tracked-changes support, and structural QA for Word documents" in readme
+    assert "| [`pptmcp`](pptmcp/) | Build, edit, review, and export PowerPoint presentations. Output Contract framework for machine-verifiable slide specs | `pip install mcp-office` | 51 |" in readme
+    assert "| [`wordmcp`](wordmcp/) | Template assembly, tracked-changes support, and structural QA for Word documents | `pip install mcp-office` | 50 |" in readme
     assert "| [`mailmcp`](mailmcp/) | Integrated into the current source distribution; Windows Outlook UAT and published-artifact verification pending |" in readme
-    assert " | 46 |" in readme
-    assert " | 50 |" in readme
 
+    assert "You should see 51 PowerPoint tools." in quickstart
+    assert "You should see 50 tools." in quickstart
     assert "You should see 48 tools." not in quickstart
-    assert "You should see 51 tools." not in quickstart
-    assert "canonical public callable surface is 46 endpoints" in quickstart
-    assert "canonical public callable surface is 50 endpoints" in quickstart
+    assert "You should see 51 tools. If you do, you're ready." not in quickstart
 
-    assert "**46 canonical callable endpoints**" in ppt_readme
+    assert "**51 always-registered tools**" in ppt_readme
     assert "**50 canonical callable endpoints**" in word_readme
     assert "48 always-registered tools" not in ppt_readme
     assert "**51 tools**" not in word_readme
 
-    assert "46 canonical callable endpoints" in server_json
+    assert "51 tools" in server_json
     assert "50 canonical callable endpoints" in server_json
-    assert "46 canonical callable endpoints" in ppt_pyproject
+    assert "51 tools" in ppt_pyproject
     assert "50 canonical callable endpoints" in word_pyproject
 
     assert "| pptmcp | ✅ Available now | Now |" in roadmap
