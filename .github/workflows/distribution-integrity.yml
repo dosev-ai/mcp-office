@@ -61,7 +61,7 @@ jobs:
               for entry_point in dist.entry_points
               if entry_point.group == "console_scripts"
           }
-          required = {"excelmcp", "pptmcp", "wordmcp"}
+          required = {"excelmcp", "pptmcp", "wordmcp", "mailmcp"}
           missing = sorted(required - set(console))
           assert not missing, f"Missing required console entry points: {missing}"
           for name, entry_point in sorted(console.items()):

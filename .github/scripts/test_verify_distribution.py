@@ -20,17 +20,20 @@ PACKAGES = [
     "wordmcp",
     "wordmcp._com",
     "wordmcp._docx",
+    "mailmcp",
     "mcpshared",
 ]
 SCRIPTS = {
     "excelmcp": "excelmcp.server:main",
     "pptmcp": "pptmcp.server:main",
     "wordmcp": "wordmcp.server:main",
+    "mailmcp": "mailmcp.server:main",
 }
 PACKAGE_DIRS = {
     "excelmcp": "excelmcp/src/excelmcp",
     "pptmcp": "pptmcp/src/pptmcp",
     "wordmcp": "wordmcp/src/wordmcp",
+    "mailmcp": "mailmcp/src/mailmcp",
     "mcpshared": "shared/src/mcpshared",
 }
 
@@ -160,6 +163,30 @@ class VerifyDistributionTests(unittest.TestCase):
             project_text=_project_text(packages=packages, scripts=scripts)
         )
         with td, self.assertRaisesRegex(SystemExit, "missing required suite packages"):
+            verify_distribution.verify(project, dist)
+
+    def test_rejects_mailmcp_removed_from_build_config(self):
+        packages = [package for package in PACKAGES if package != "mailmcp"]
+        scripts = {
+            name: target for name, target in SCRIPTS.items() if name != "mailmcp"
+        }
+        td, project, dist = self.make_fixture(
+            project_text=_project_text(packages=packages, scripts=scripts)
+        )
+        with td, self.assertRaisesRegex(SystemExit, "missing required suite packages"):
+            verify_distribution.verify(project, dist)
+
+    def test_rejects_mailmcp_console_script_removed(self):
+        scripts = {
+            name: target for name, target in SCRIPTS.items() if name != "mailmcp"
+        }
+        td, project, dist = self.make_fixture(
+            project_text=_project_text(scripts=scripts)
+        )
+        with td, self.assertRaisesRegex(
+            SystemExit,
+            "required console script 'mailmcp' must map",
+        ):
             verify_distribution.verify(project, dist)
 
     def test_rejects_missing_wheel_package(self):

@@ -15,12 +15,14 @@ REQUIRED_PACKAGES = frozenset({
     "wordmcp",
     "wordmcp._com",
     "wordmcp._docx",
+    "mailmcp",
     "mcpshared",
 })
 REQUIRED_SCRIPTS = {
     "excelmcp": "excelmcp.server:main",
     "pptmcp": "pptmcp.server:main",
     "wordmcp": "wordmcp.server:main",
+    "mailmcp": "mailmcp.server:main",
 }
 
 

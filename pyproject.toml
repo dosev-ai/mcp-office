@@ -2,14 +2,14 @@
 name = "mcp-office"
 version = "0.7.0"
 requires-python = ">=3.11"
-description = "Local-first MCP servers for Microsoft Office — Excel, PowerPoint, and Word automation via the Model Context Protocol. Runs on Windows."
+description = "Local-first MCP servers for Microsoft Office — Excel, PowerPoint, Word, and Outlook automation via the Model Context Protocol. Runs on Windows."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Delyan Dosev", email = "ddossev@gmail.com" }]
 keywords = [
     "mcp", "model-context-protocol", "microsoft-office", "office-automation",
     "fastmcp", "python", "automation", "ai", "claude",
-    "excel", "powerpoint", "word", "xlsx", "pptx", "docx",
+    "excel", "powerpoint", "word", "outlook", "mail", "xlsx", "pptx", "docx",
 ]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -38,6 +38,7 @@ dev = ["pytest>=8.0", "pytest-mock>=3.12", "ruff==0.15.4", "pytest-socket>=0.7"]
 excelmcp = "excelmcp.server:main"
 pptmcp = "pptmcp.server:main"
 wordmcp = "wordmcp.server:main"
+mailmcp = "mailmcp.server:main"
 
 [project.urls]
 Homepage = "https://github.com/dosev-ai/mcp-office"
@@ -56,6 +57,7 @@ packages = [
     "wordmcp",
     "wordmcp._com",
     "wordmcp._docx",
+    "mailmcp",
     "mcpshared",
 ]
 
@@ -63,4 +65,5 @@ packages = [
 excelmcp  = "excelmcp/src/excelmcp"
 pptmcp    = "pptmcp/src/pptmcp"
 wordmcp   = "wordmcp/src/wordmcp"
+mailmcp   = "mailmcp/src/mailmcp"
 mcpshared = "shared/src/mcpshared"
