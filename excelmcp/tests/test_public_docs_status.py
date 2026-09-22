@@ -3,6 +3,13 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 FIRST_WORKFLOW = ROOT / "docs" / "first-workflow.md"
 README = ROOT / "README.md"
+QUICKSTART = ROOT / "docs" / "quickstart.md"
+ROADMAP = ROOT / "ROADMAP.md"
+PPT_README = ROOT / "pptmcp" / "README.md"
+WORD_README = ROOT / "wordmcp" / "README.md"
+SERVER_JSON = ROOT / "server.json"
+PPT_PYPROJECT = ROOT / "pptmcp" / "pyproject.toml"
+WORD_PYPROJECT = ROOT / "wordmcp" / "pyproject.toml"
 
 
 def test_first_workflow_matches_public_suite_availability():
@@ -18,3 +25,48 @@ def test_first_workflow_matches_public_suite_availability():
     assert "### ✅ Available now" in available
     assert all(package in available for package in ("excelmcp", "pptmcp", "wordmcp"))
     assert "| [`mailmcp`](mailmcp/) |" in coming_next
+
+
+def test_current_public_tool_counts_and_roadmap_are_synchronized():
+    readme = README.read_text(encoding="utf-8")
+    quickstart = QUICKSTART.read_text(encoding="utf-8")
+    roadmap = ROADMAP.read_text(encoding="utf-8")
+    ppt_readme = PPT_README.read_text(encoding="utf-8")
+    word_readme = WORD_README.read_text(encoding="utf-8")
+    server_json = SERVER_JSON.read_text(encoding="utf-8")
+    ppt_pyproject = PPT_PYPROJECT.read_text(encoding="utf-8")
+    word_pyproject = WORD_PYPROJECT.read_text(encoding="utf-8")
+
+    assert "| [`pptmcp`](pptmcp/) |" not in readme  # guard accidental escaped-markdown drift
+    assert "| [`wordmcp`](wordmcp/) |" not in readme
+    assert "| [`excelmcp`](excelmcp/) |" not in readme
+    assert "| [`mailmcp`](mailmcp/) |" not in readme
+
+    assert "| [`pptmcp`](pptmcp/) |" not in readme
+    assert "| [`wordmcp`](wordmcp/) |" not in readme
+    assert "| [`mailmcp`](mailmcp/) |" not in readme
+
+    assert "| [`pptmcp`](pptmcp/) |" not in readme
+    assert " | 46 |" in readme
+    assert " | 50 |" in readme
+
+    assert "You should see 48 tools." not in quickstart
+    assert "You should see 51 tools." not in quickstart
+    assert "canonical public callable surface is 46 endpoints" in quickstart
+    assert "canonical public callable surface is 50 endpoints" in quickstart
+
+    assert "**46 canonical callable endpoints**" in ppt_readme
+    assert "**50 canonical callable endpoints**" in word_readme
+    assert "48 always-registered tools" not in ppt_readme
+    assert "**51 tools**" not in word_readme
+
+    assert "46 canonical callable endpoints" in server_json
+    assert "50 canonical callable endpoints" in server_json
+    assert "46 canonical callable endpoints" in ppt_pyproject
+    assert "50 canonical callable endpoints" in word_pyproject
+
+    assert "| pptmcp | ✅ Available now | Now |" in roadmap
+    assert "| wordmcp | ✅ Available now | Now |" in roadmap
+    assert "| mailmcp | 🚧 Source-integrated; release verification pending | Coming next |" in roadmap
+    assert "pptmcp | 🗓️ Roadmap" not in roadmap
+    assert "wordmcp | 🗓️ Roadmap" not in roadmap
