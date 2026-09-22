@@ -44,7 +44,7 @@
       "type": "git",
       "url": "https://github.com/dosev-ai/mcp-office",
       "command": "pip install -e ./shared && pip install -e ./pptmcp",
-      "description": "PowerPoint MCP server — 46 canonical callable endpoints for building, editing, reviewing, and exporting presentations",
+      "description": "PowerPoint MCP server — 51 tools for building, editing, reviewing, and exporting presentations",
       "environmentVariables": [
         {
           "name": "PPT_ALLOWLIST_ROOTS",
