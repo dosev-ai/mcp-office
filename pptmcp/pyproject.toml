@@ -2,7 +2,7 @@
 name = "mcp-office-powerpoint"
 version = "0.5.0"
 requires-python = ">=3.11"
-description = "PowerPoint MCP server — 48 tools with Output Contracts and machine-verifiable slide specs. Part of the mcp-office workflow suite."
+description = "PowerPoint MCP server — 46 canonical callable endpoints with Output Contracts and machine-verifiable slide specs. Part of the mcp-office workflow suite."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "Delyan Dosev", email = "ddossev@gmail.com" }]
