@@ -11,7 +11,7 @@ destructive calls, preventing accidental mutations.
 
 ## Status
 
-> Phase 1 + Phase 2 COM — v0.4.0 · **51 tools** · 456 tests (non-integration) · document assembly, review/evidence, security hardening, and full dispatcher surface
+> Phase 1 + Phase 2 COM — v0.4.0 · **50 canonical callable endpoints** · 456 tests (non-integration) · document assembly, review/evidence, security hardening, and full dispatcher surface
 
 ---
 
