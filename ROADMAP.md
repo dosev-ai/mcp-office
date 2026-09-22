@@ -33,7 +33,7 @@ Structured workbook read/write, formatting, validation, charts, exports, and loc
 
 ### pptmcp
 
-Build, edit, review, and export PowerPoint presentations with Output Contract support. The canonical public callable surface is **46 endpoints**.
+Build, edit, review, and export PowerPoint presentations with Output Contract support. The current always-registered PowerPoint surface is **51 tools**. Platform-conditional COM tools are reported separately.
 
 ### wordmcp
 
