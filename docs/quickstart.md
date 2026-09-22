@@ -223,7 +223,7 @@ In Claude Desktop or VS Code Copilot, ask:
 Call capabilities() on powerpoint-pptmcp
 ```
 
-You should see 48 tools. If you do, you're ready.
+You should see the PowerPoint capability inventory. The canonical public callable surface is 46 endpoints; conditional/compatibility metadata may be listed separately.
 
 ### Environment variables
 
@@ -320,7 +320,7 @@ In Claude Desktop or VS Code Copilot, ask:
 Call capabilities() on word-wordmcp
 ```
 
-You should see 51 tools. If you do, you're ready.
+You should see the Word capability inventory. The canonical public callable surface is 50 endpoints.
 
 ### Environment variables
 
