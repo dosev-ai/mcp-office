@@ -44,7 +44,7 @@
       "type": "git",
       "url": "https://github.com/dosev-ai/mcp-office",
       "command": "pip install -e ./shared && pip install -e ./pptmcp",
-      "description": "PowerPoint MCP server — 48 tools for building, editing, reviewing, and exporting presentations",
+      "description": "PowerPoint MCP server — 46 canonical callable endpoints for building, editing, reviewing, and exporting presentations",
       "environmentVariables": [
         {
           "name": "PPT_ALLOWLIST_ROOTS",
@@ -68,7 +68,7 @@
       "type": "git",
       "url": "https://github.com/dosev-ai/mcp-office",
       "command": "pip install -e ./wordmcp",
-      "description": "Word MCP server — 51 tools for document creation, structured editing, tracked changes, and export",
+      "description": "Word MCP server — 50 canonical callable endpoints for document creation, structured editing, tracked changes, and export",
       "environmentVariables": [
         {
           "name": "WORD_ALLOWLIST_ROOTS",
