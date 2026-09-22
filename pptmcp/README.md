@@ -51,7 +51,7 @@ pytest pptmcp/tests/test_unit.py pptmcp/tests/test_server_smoke.py pptmcp/tests/
 pytest pptmcp/tests/test_integration.py -v -m integration
 ```
 
-> **Current status:** v0.5.0 plus the 2026-05-08 table-authoring gap closure, with **48 always-registered tools** including the consolidated `slide`, `shape`, and `export` dispatch surfaces plus `set_table_style`, `manage_comments`, and `batch_set_text`. Historical UAT milestones, prior tool counts, and older test-count snapshots are preserved in the changelog sections below.
+> **Current status:** v0.5.0 plus the 2026-05-08 table-authoring gap closure, with **46 canonical callable endpoints** including the consolidated `slide`, `shape`, and `export` dispatch surfaces plus `set_table_style`, `manage_comments`, and `batch_set_text`. Historical UAT milestones, prior tool counts, and older test-count snapshots are preserved in the changelog sections below.
 
 ### VS Code mcp.json Registration
 
@@ -97,7 +97,7 @@ No write-gate required. Safe to call without `PPT_ENABLE_WRITE`.
 
 | Tool | Description | Key response fields |
 |---|---|---|
-| `capabilities` | Returns server phase, backend, per-tool parameter schema, and governance summary. `tools` and `com_tools` entries use dict format: `{"tool": str, "params": [{"name": str, "type": str, "required": bool}]}`. 48 always-registered tools; 4 platform-conditional COM-only tools in `com_tools`. | `phase`, `tools[].tool`, `tools[].params[]`, `com_tools[].tool`, `com_tools[].params[]`, `total_tools`, `governance` |
+| `capabilities` | Returns server phase, backend, per-tool parameter schema, and governance summary. `tools` and `com_tools` entries use dict format: `{"tool": str, "params": [{"name": str, "type": str, "required": bool}]}`. 46 canonical callable endpoints; platform-conditional COM metadata is reported separately in `com_tools`. | `phase`, `tools[].tool`, `tools[].params[]`, `com_tools[].tool`, `com_tools[].params[]`, `total_tools`, `governance` |
 | `read_presentation` | Overview of all slides — count, titles, shape counts, notes flag | `slide_count`, `slides[].slide_index`, `slides[].title`, `slides[].shapes_count`, `slides[].has_notes` |
 | `get_presentation_metadata` | File-level document properties | `title`, `author`, `subject`, `keywords`, `slide_count`, `created`, `modified` |
 | `list_layouts` | Return all slide layouts in a presentation with index, name, and placeholder info. Use with `add_slide(layout_index=N)` to pick the right layout | `index`, `name`, `placeholder_count`, `placeholder_types` |
