@@ -223,7 +223,7 @@ In Claude Desktop or VS Code Copilot, ask:
 Call capabilities() on powerpoint-pptmcp
 ```
 
-You should see the PowerPoint capability inventory. The canonical public callable surface is 46 endpoints; conditional/compatibility metadata may be listed separately.
+You should see 51 PowerPoint tools. Platform-conditional COM tools are reported separately.
 
 ### Environment variables
 
