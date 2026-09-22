@@ -37,10 +37,10 @@ def test_current_public_tool_counts_and_roadmap_are_synchronized():
     ppt_pyproject = PPT_PYPROJECT.read_text(encoding="utf-8")
     word_pyproject = WORD_PYPROJECT.read_text(encoding="utf-8")
 
-    assert "| [`excelmcp`](excelmcp/) | Read, write, style, validate, and export Excel workbooks | `pip install mcp-office` | 65 |".replace("\\`", "`") in readme
-    assert "| [`pptmcp`](pptmcp/) | Build, edit, review, and export PowerPoint presentations.".replace("\\`", "`") in readme
-    assert "| [`wordmcp`](wordmcp/) | Template assembly, tracked-changes support, and structural QA for Word documents".replace("\\`", "`") in readme
-    assert "| [`mailmcp`](mailmcp/) | Integrated into the current source distribution; Windows Outlook UAT and published-artifact verification pending |".replace("\\`", "`") in readme
+    assert "| [`excelmcp`](excelmcp/) | Read, write, style, validate, and export Excel workbooks | `pip install mcp-office` | 65 |" in readme
+    assert "| [`pptmcp`](pptmcp/) | Build, edit, review, and export PowerPoint presentations." in readme
+    assert "| [`wordmcp`](wordmcp/) | Template assembly, tracked-changes support, and structural QA for Word documents" in readme
+    assert "| [`mailmcp`](mailmcp/) | Integrated into the current source distribution; Windows Outlook UAT and published-artifact verification pending |" in readme
     assert " | 46 |" in readme
     assert " | 50 |" in readme
 
