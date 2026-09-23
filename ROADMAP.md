@@ -1,40 +1,46 @@
 # Roadmap
 
-MCP Office follows a staged package exposure model. Each package goes public only after its proof cycle clears.
+MCP Office ships as one `mcp-office` distribution with distinct local MCP servers. Public package claims follow verified release evidence, not source presence alone.
 
 ## Current status
 
 | Package | Status | Available |
 |---|---|---|
-| excelmcp | ✅ Phase 1 lead | Now |
-| mailmcp | 🚧 In development | After excelmcp proof cycle |
-| pptmcp | 🗓️ Roadmap | TBD |
-| wordmcp | 🗓️ Roadmap | TBD |
+| excelmcp | ✅ Available now | Now |
+| pptmcp | ✅ Available now | Now |
+| wordmcp | ✅ Available now | Now |
+| mailmcp | 🚧 Source-integrated; release verification pending | Coming next |
+
+Excel, PowerPoint, and Word are the currently released public suite. MailMCP is integrated into the repository and the 0.8.0 source candidate, but it remains **Coming next** until Windows Outlook UAT, published-artifact verification, and the downstream listing/claim gate pass.
 
 ## What “proof cycle” means
 
-Before a package becomes the public lead:
-1. It completes internal delivery and UAT
-2. It ships clean into this repo
-3. First-run confirmations from external users are collected
-4. Friction points are addressed
-5. The next package is promoted
+Before a package changes to **Available now**:
 
-## excelmcp — Phase 1 (current)
+1. implementation and governed review converge;
+2. exact-candidate CI and package-specific UAT pass;
+3. the package ships through the approved distribution path;
+4. the published artifact is installed and verified in a clean target environment;
+5. public listings and documentation are reconciled to the verified artifact.
 
-Flagship workflow: **structured input → generate Excel artifact → validate contract → output**
+Source integration by itself is not a release claim.
 
-Core tools:
-- `range_io` — read/write cell ranges
-- `apply_style` — formatting via COM or openpyxl
-- `validate_contract` — check workbook against embedded schema
-- `export_as_pdf` — native Excel PDF export via COM
-- 60+ additional tools for metadata, charts, named ranges, and more
+## Available now
+
+### excelmcp
+
+Structured workbook read/write, formatting, validation, charts, exports, and local Excel automation.
+
+### pptmcp
+
+Build, edit, review, and export PowerPoint presentations with Output Contract support. The current always-registered PowerPoint surface is **51 tools**. Platform-conditional COM tools are reported separately.
+
+### wordmcp
+
+Document assembly, structured editing, tracked changes, review/evidence, and export. The canonical public callable surface is **50 endpoints**.
 
 ## mailmcp — coming next
 
-Outlook email, calendar, contacts, and MailRepo full-text search over your mail history. Expanding after excelmcp proof.
+MailMCP provides local Outlook email, calendar, contacts, tasks, and related automation. It is present in the single source distribution, but public availability remains gated on Windows Outlook UAT and published-artifact verification.
 
-## pptmcp, wordmcp — roadmap
-
-In active internal development. Will be added to this repo when their proof cycles are ready.
+The public boundary remains local-first: classic Outlook on Windows is required for Outlook automation; write/send/delete/rules controls remain explicitly gated; source availability must not be described as a published release.

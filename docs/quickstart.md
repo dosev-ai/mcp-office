@@ -223,7 +223,7 @@ In Claude Desktop or VS Code Copilot, ask:
 Call capabilities() on powerpoint-pptmcp
 ```
 
-You should see 48 tools. If you do, you're ready.
+You should see 51 PowerPoint tools. Platform-conditional COM tools are reported separately.
 
 ### Environment variables
 
@@ -320,7 +320,7 @@ In Claude Desktop or VS Code Copilot, ask:
 Call capabilities() on word-wordmcp
 ```
 
-You should see 51 tools. If you do, you're ready.
+You should see 50 tools. This is the current Word capability inventory.
 
 ### Environment variables
 
