@@ -14,3 +14,6 @@ def test_public_powerpoint_count_matches_executable_capabilities():
     assert f"| `pip install mcp-office` | {count} |" in readme.split("| [`pptmcp`](pptmcp/) |", 1)[1].split("\n", 1)[0]
     assert f"You should see {count} PowerPoint tools." in quickstart
     assert f"**{count} always-registered tools**" in package_readme
+    assert "2 platform-conditional COM-only tools" in package_readme
+    assert "`total_tools`" not in package_readme
+    assert "Each should return a tool list (65 for Excel, 51 for PowerPoint, 50 for Word)." in readme
