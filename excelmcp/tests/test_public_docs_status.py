@@ -41,6 +41,7 @@ def test_current_public_tool_counts_and_roadmap_are_synchronized():
     assert "| [`pptmcp`](pptmcp/) | Build, edit, review, and export PowerPoint presentations. Output Contract framework for machine-verifiable slide specs | `pip install mcp-office` | 51 |" in readme
     assert "| [`wordmcp`](wordmcp/) | Template assembly, tracked-changes support, and structural QA for Word documents | `pip install mcp-office` | 50 |" in readme
     assert "| [`mailmcp`](mailmcp/) | Integrated into the current source distribution; Windows Outlook UAT and published-artifact verification pending |" in readme
+    assert "Each should return a tool list (65 for Excel, 51 for PowerPoint, 50 for Word)." in readme
 
     assert "You should see 51 PowerPoint tools." in quickstart
     assert "You should see 50 tools." in quickstart
@@ -48,6 +49,8 @@ def test_current_public_tool_counts_and_roadmap_are_synchronized():
     assert "You should see 51 tools. If you do, you're ready." not in quickstart
 
     assert "**51 always-registered tools**" in ppt_readme
+    assert "2 platform-conditional COM-only tools" in ppt_readme
+    assert "`total_tools`" not in ppt_readme
     assert "**50 canonical callable endpoints**" in word_readme
     assert "48 always-registered tools" not in ppt_readme
     assert "**51 tools**" not in word_readme
