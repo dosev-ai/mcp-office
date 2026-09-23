@@ -119,7 +119,7 @@ Call capabilities() on powerpoint-pptmcp
 Call capabilities() on word-wordmcp
 ```
 
-Each should return a tool list (65 for Excel, 46 for PowerPoint, 50 for Word). If a server is missing, check that `python` resolves to the venv where you installed `mcp-office`.
+Each should return a tool list (65 for Excel, 51 for PowerPoint, 50 for Word). If a server is missing, check that `python` resolves to the venv where you installed `mcp-office`.
 
 Full per-package guides: [excelmcp/README.md](excelmcp/README.md) · [pptmcp/README.md](pptmcp/README.md) · [wordmcp/README.md](wordmcp/README.md) · [mailmcp/README.md](mailmcp/README.md) *(source-integrated; release pending)*
 
