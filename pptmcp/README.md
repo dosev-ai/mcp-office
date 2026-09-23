@@ -97,7 +97,7 @@ No write-gate required. Safe to call without `PPT_ENABLE_WRITE`.
 
 | Tool | Description | Key response fields |
 |---|---|---|
-| `capabilities` | Returns server phase, backend, per-tool parameter schema, and governance summary. `tools` and `com_tools` entries use dict format: `{"tool": str, "params": [{"name": str, "type": str, "required": bool}]}`. 51 always-registered tools; 4 platform-conditional COM-only tools are reported separately in `com_tools`. | `phase`, `tools[].tool`, `tools[].params[]`, `com_tools[].tool`, `com_tools[].params[]`, `total_tools`, `governance` |
+| `capabilities` | Returns server phase, backend, per-tool parameter schema, and governance summary. `tools` and `com_tools` entries use dict format: `{"tool": str, "params": [{"name": str, "type": str, "required": bool}]}`. 51 always-registered tools; 2 platform-conditional COM-only tools are reported separately in `com_tools`. | `phase`, `tools[].tool`, `tools[].params[]`, `com_tools[].tool`, `com_tools[].params[]`, `governance` |
 | `read_presentation` | Overview of all slides — count, titles, shape counts, notes flag | `slide_count`, `slides[].slide_index`, `slides[].title`, `slides[].shapes_count`, `slides[].has_notes` |
 | `get_presentation_metadata` | File-level document properties | `title`, `author`, `subject`, `keywords`, `slide_count`, `created`, `modified` |
 | `list_layouts` | Return all slide layouts in a presentation with index, name, and placeholder info. Use with `add_slide(layout_index=N)` to pick the right layout | `index`, `name`, `placeholder_count`, `placeholder_types` |
